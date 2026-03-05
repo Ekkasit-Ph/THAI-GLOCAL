@@ -30,6 +30,7 @@ public class CenterService {
 
     private CenterResponse mapToCenterResponse(Center center) {
         return CenterResponse.builder()
+                .centerId(center.getCenterId())
                 .centerName(center.getCenterName())
                 .address(center.getAddress())
                 .telephone(center.getTelephone())

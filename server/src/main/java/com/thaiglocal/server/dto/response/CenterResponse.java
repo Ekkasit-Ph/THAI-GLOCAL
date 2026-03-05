@@ -8,6 +8,7 @@ import lombok.Setter;
 @Getter
 @Builder
 public class CenterResponse {
+    private Long centerId;
     private String centerName;
     private String address;
     private String telephone;
