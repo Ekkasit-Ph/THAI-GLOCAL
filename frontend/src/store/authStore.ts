@@ -3,17 +3,18 @@ import { persist } from "zustand/middleware";
 
 export interface UserProfile {
   id: string;
-  name: string;
   email: string;
-  phone?: string;
-  bio?: string;
-  avatar?: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  telephone?: string;
+  address?: string;
 }
 
 interface AuthState {
   user: UserProfile | null;
   login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string) => Promise<void>;
   logout: () => void;
   updateProfile: (data: Partial<Omit<UserProfile, "id" | "email">>) => void;
 }
@@ -23,23 +24,24 @@ const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
 
-      login: async (email, password) => {
-        // Simulate API call — accept any valid email + non-empty password
-        if (!email || !password) throw new Error("Email and password are required.");
-        if (password.length < 6) throw new Error("Invalid email or password.");
+      login: async (emailOrUsername, password) => {
+        if (!emailOrUsername || !password) throw new Error("Email/username and password are required.");
+        if (password.length < 6) throw new Error("Invalid credentials.");
 
-        // Check localStorage for a registered user
         const stored = localStorage.getItem("tg_users");
         const users: (UserProfile & { password: string })[] = stored ? JSON.parse(stored) : [];
-        const found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-        if (!found || found.password !== password) throw new Error("Invalid email or password.");
+        const q = emailOrUsername.toLowerCase();
+        const found = users.find(
+          (u) => u.email.toLowerCase() === q || (u.username ?? "").toLowerCase() === q
+        );
+        if (!found || found.password !== password) throw new Error("Invalid email/username or password.");
 
         const { password: _pw, ...profile } = found;
         set({ user: profile });
       },
 
-      signup: async (name, email, password) => {
-        if (!name || !email || !password) throw new Error("All fields are required.");
+      signup: async (email, password) => {
+        if (!email || !password) throw new Error("All fields are required.");
         if (password.length < 6) throw new Error("Password must be at least 6 characters.");
 
         const stored = localStorage.getItem("tg_users");
@@ -50,10 +52,7 @@ const useAuthStore = create<AuthState>()(
 
         const newUser: UserProfile & { password: string } = {
           id: crypto.randomUUID(),
-          name,
           email,
-          phone: "",
-          bio: "",
           password,
         };
         users.push(newUser);
