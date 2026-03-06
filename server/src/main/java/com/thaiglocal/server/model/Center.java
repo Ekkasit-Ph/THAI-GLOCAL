@@ -30,7 +30,6 @@ public class Center {
     private String district;
     private String province;
     private String googleMapLink;
-    private String telephone;
     private String email;
     private String line;
     private String facebook;

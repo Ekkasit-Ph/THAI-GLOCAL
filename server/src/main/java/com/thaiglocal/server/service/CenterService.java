@@ -37,7 +37,6 @@ public class CenterService {
                 .district(center.getDistrict())
                 .province(center.getProvince())
                 .googleMapLink(center.getGoogleMapLink())
-                .telephone(center.getTelephone())
                 .email(center.getEmail())
                 .line(center.getLine())
                 .facebook(center.getFacebook())
@@ -91,7 +90,6 @@ public class CenterService {
                 .district(request.getDistrict())
                 .province(request.getProvince())
                 .googleMapLink(request.getGoogleMapLink())
-                .telephone(request.getTelephone())
                 .email(request.getEmail())
                 .line(request.getLine())
                 .facebook(request.getFacebook())
@@ -130,9 +128,6 @@ public class CenterService {
         if (request.getGoogleMapLink() != null) {
             center.setGoogleMapLink(request.getGoogleMapLink());
         }
-        if (request.getTelephone() != null) {
-            center.setTelephone(request.getTelephone());
-        }
         if (request.getEmail() != null) {
             center.setEmail(request.getEmail());
         }
@@ -159,5 +154,11 @@ public class CenterService {
         }
 
         centerRepository.save(center);
+    }
+
+    public void deleteCenter(Long centerId) {
+        Center center = centerRepository.findById(centerId)
+                .orElseThrow(() -> new RuntimeException("Center not found with id: " + centerId));
+        centerRepository.delete(center);
     }
 }
