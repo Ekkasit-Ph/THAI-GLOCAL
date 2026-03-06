@@ -3,7 +3,7 @@ package com.thaiglocal.webclient.dto.request;
 import java.time.LocalDateTime;
 
 public class ActivityRequest {
-    private String name;
+    private String activityName;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private String description;
@@ -13,8 +13,8 @@ public class ActivityRequest {
 
     public ActivityRequest() {}
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public String getActivityName() { return activityName; }
+    public void setActivityName(String activityName) { this.activityName = activityName; }
 
     public LocalDateTime getStartDate() { return startDate; }
     public void setStartDate(LocalDateTime startDate) { this.startDate = startDate; }

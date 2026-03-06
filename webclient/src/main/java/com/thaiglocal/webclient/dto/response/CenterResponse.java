@@ -1,5 +1,7 @@
 package com.thaiglocal.webclient.dto.response;
 
+import java.time.LocalDateTime;
+
 public record CenterResponse(
     Long centerId,
     String name,
@@ -9,8 +11,8 @@ public record CenterResponse(
     String line,
     String facebook,
     String website,
-    String createdAt,
-    String deletedAt,
+    LocalDateTime createdAt,
+    LocalDateTime deletedAt,
     String leaderFirstName,
     String leaderLastName,
     String leaderTel

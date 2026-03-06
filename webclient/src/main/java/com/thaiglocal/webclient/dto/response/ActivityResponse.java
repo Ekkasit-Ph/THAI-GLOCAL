@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 public record ActivityResponse(
     Long activityId,
-    String name,
+    String activityName,
     LocalDateTime startDate,
     LocalDateTime endDate,
     String description,
