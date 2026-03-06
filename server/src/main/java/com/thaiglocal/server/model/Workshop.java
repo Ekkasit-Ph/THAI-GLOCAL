@@ -1,6 +1,7 @@
 package com.thaiglocal.server.model;
 
 import java.util.List;
+
 import java.util.ArrayList;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -26,6 +27,7 @@ public class Workshop {
     private String timeTable;
     private Double price;
     private Integer MemberCapacity;
+    private String workshopType;
 
     // relationship
     // many workshops can belong to one center
@@ -38,6 +40,11 @@ public class Workshop {
     @OneToMany(mappedBy = "workshop", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Activity> activities = new ArrayList<>();
 
+    // one workshop can have many workshop images
+    @Builder.Default
+    @OneToMany(mappedBy = "workshop", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<WorkshopImage> workshopImages = new ArrayList<>();
+
     // helper method
     // for bi-directional relationship management (Workshop <-> Activity)
     public void addActivity(Activity activity) {
@@ -48,5 +55,16 @@ public class Workshop {
     public void removeActivity(Activity activity) {
         activities.remove(activity);
         activity.setWorkshop(null);
+    }
+
+    // for bi-directional relationship management (Workshop <-> WorkshopImage)
+    public void addWorkshopImage(WorkshopImage workshopImage) {
+        workshopImages.add(workshopImage);
+        workshopImage.setWorkshop(this);
+    }
+
+    public void removeWorkshopImage(WorkshopImage workshopImage) {
+        workshopImages.remove(workshopImage);
+        workshopImage.setWorkshop(null);
     }
 }

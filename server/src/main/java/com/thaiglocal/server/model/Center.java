@@ -1,5 +1,6 @@
 package com.thaiglocal.server.model;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,8 +30,8 @@ public class Center {
     private String line;
     private String facebook;
     private String webSite;
-    private String createdAt;
-    private String deletedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime deletedAt;
     private String leaderFirstName;
     private String leaderLastName;
     private String leaderTelephone;
@@ -50,6 +51,11 @@ public class Center {
     @Builder.Default
     @OneToMany(mappedBy = "center", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Workshop> workshops = new ArrayList<>();
+
+    // one center can have many center images
+    @Builder.Default
+    @OneToMany(mappedBy = "center", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CenterImage> centerImages = new ArrayList<>();
 
 
 
@@ -85,5 +91,16 @@ public class Center {
     public void removeWorkshop(Workshop workshop) {
         workshops.remove(workshop);
         workshop.setCenter(null);
+    }
+
+    // for bi-directional relationship management (Center <-> CenterImage)
+    public void addCenterImage(CenterImage centerImage) {
+        centerImages.add(centerImage);
+        centerImage.setCenter(this);
+    }
+
+    public void removeCenterImage(CenterImage centerImage) {
+        centerImages.remove(centerImage);
+        centerImage.setCenter(null);
     }
 }

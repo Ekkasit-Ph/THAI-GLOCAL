@@ -1,5 +1,7 @@
 package com.thaiglocal.server.dto.response;
 
+import java.time.LocalDateTime;
+
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,7 +18,7 @@ public class CenterResponse {
     private String line;
     private String facebook;
     private String webSite;
-    private String createdAt;
+    private LocalDateTime createdAt;
     private String leaderFirstName;
     private String leaderLastName;
     private String leaderTelephone;

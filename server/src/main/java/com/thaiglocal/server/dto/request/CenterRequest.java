@@ -1,5 +1,7 @@
 package com.thaiglocal.server.dto.request;
 
+import java.time.LocalDateTime;
+
 import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,7 +22,7 @@ public class CenterRequest {
     private String line;
     private String facebook;
     private String webSite;
-    private String createdAt;
+    private LocalDateTime createdAt;
     private String leaderFirstName;
     private String leaderLastName;
     private String leaderTelephone;
