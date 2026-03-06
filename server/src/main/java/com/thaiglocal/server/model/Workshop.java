@@ -24,7 +24,6 @@ public class Workshop {
 
     private String workshopName;
     private String description;
-    private String timeTable;
     private Double price;
     private Integer MemberCapacity;
     private String workshopType;
