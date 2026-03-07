@@ -10,7 +10,6 @@ import com.thaiglocal.server.dto.response.ActivityRegisterReponse;
 import com.thaiglocal.server.dto.response.ActivityResponse;
 import com.thaiglocal.server.model.Activity;
 import com.thaiglocal.server.model.Workshop;
-import com.thaiglocal.server.repository.ActivityRegisterRepository;
 import com.thaiglocal.server.repository.ActivityRepository;
 import com.thaiglocal.server.repository.WorkshopRepository;
 
@@ -18,16 +17,13 @@ import com.thaiglocal.server.repository.WorkshopRepository;
 public class ActivityService {
     private final ActivityRepository activityRepository;
     private final WorkshopRepository workshopRepository;
-    private final ActivityRegisterRepository activityRegisterRepository;
 
     public ActivityService(
         ActivityRepository activityRepository,
-        WorkshopRepository workshopRepository,
-        ActivityRegisterRepository activityRegisterRepository
+        WorkshopRepository workshopRepository
     ) {
         this.activityRepository = activityRepository;
         this.workshopRepository = workshopRepository;
-        this.activityRegisterRepository = activityRegisterRepository;
     }
 
     private ActivityResponse mapToActivityResponse(Activity activity) {
