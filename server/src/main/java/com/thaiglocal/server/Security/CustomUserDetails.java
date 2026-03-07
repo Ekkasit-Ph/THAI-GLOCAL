@@ -1,4 +1,4 @@
-package com.thaiglocal.server.Security;
+package com.thaiglocal.server.security;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -8,9 +8,9 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.thaiglocal.server.Model.User;
+import com.thaiglocal.server.model.User;
 
-public class CustomUserDetails implements UserDetails{
+public class CustomUserDetails implements UserDetails {
     private final User user;
 
     public CustomUserDetails(User user) {
@@ -22,6 +22,10 @@ public class CustomUserDetails implements UserDetails{
         return Collections.singletonList(
             new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
         );
+    }
+
+    public Long getId() {
+        return user.getUserId();
     }
 
     @Override

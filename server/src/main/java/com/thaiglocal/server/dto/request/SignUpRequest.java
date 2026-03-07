@@ -1,6 +1,7 @@
-package com.thaiglocal.server.dto;
+package com.thaiglocal.server.dto.request;
 
 import java.sql.Date;
+import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -41,5 +42,5 @@ public class SignUpRequest {
 
     @NotBlank(message = "Birth Date is required")
     @JsonProperty("birthDate")
-    private String birthDate;
+    private LocalDateTime birthDate;
 }

@@ -1,12 +1,12 @@
-package com.thaiglocal.server.Security;
+package com.thaiglocal.server.security;
 
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
-import com.thaiglocal.server.Model.User;
-import com.thaiglocal.server.Repository.UserRepository;
+import com.thaiglocal.server.model.User;
+import com.thaiglocal.server.repository.UserRepository;
 
 import lombok.AllArgsConstructor;
 

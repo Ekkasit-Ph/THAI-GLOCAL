@@ -1,8 +1,9 @@
-package com.thaiglocal.server.dto;
+package com.thaiglocal.server.dto.response;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
-import com.thaiglocal.server.Model.Role;
+import com.thaiglocal.server.model.enums.RoleName;;
 
 public record UserResponse(
     // Long userId,
@@ -11,12 +12,12 @@ public record UserResponse(
     String firstName,
     String lastName,    
     // String password,
-    Role role,
+    RoleName role,
     String telephone,
     String address,
-    Date birtDate,
-    Date createdAt,
-    Date deleteAt,
+    LocalDateTime birthDate,
+    LocalDateTime createdAt,
+    LocalDateTime deleteAt,
     Boolean isActive
 ) {
 }

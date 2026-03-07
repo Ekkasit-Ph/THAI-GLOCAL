@@ -1,7 +1,9 @@
-package com.thaiglocal.server.Services;
+package com.thaiglocal.server.service;
 
 import java.sql.Date;
 import java.sql.Time;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,18 +11,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.thaiglocal.server.Model.User;
-import com.thaiglocal.server.Repository.UserRepository;
-import com.thaiglocal.server.dto.SignInRequest;
-import com.thaiglocal.server.dto.SignInResponse;
-import com.thaiglocal.server.dto.SignUpRequest;
-import com.thaiglocal.server.dto.UserRequest;
-import com.thaiglocal.server.dto.UserResponse;
+import com.thaiglocal.server.dto.request.SignInRequest;
+import com.thaiglocal.server.dto.request.SignUpRequest;
+import com.thaiglocal.server.dto.request.UserRequest;
+import com.thaiglocal.server.dto.response.SignInResponse;
+import com.thaiglocal.server.dto.response.UserResponse;
+import com.thaiglocal.server.model.User;
+import com.thaiglocal.server.repository.UserRepository;
+import com.thaiglocal.server.security.JwtUtils;
 
 @Service
 public class UserService {
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private JwtUtils jwtUtils;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -36,10 +42,17 @@ public class UserService {
             throw new RuntimeException("Invalid Username, Email or Password");
         }
 
+        String role = user.getRole() != null ? user.getRole().toString() : "USER";
+        String accessToken = jwtUtils.generateAccessToken(user.getUserId(), role);
+        String refreshToken = jwtUtils.generateRefreshToken(user.getUserId());
+
         return new SignInResponse(
             user.getUsername(),
             user.getEmail(),
-            user.getRole()
+            role,
+            "Bearer",
+            accessToken,
+            refreshToken
         );
     }
 
@@ -61,8 +74,8 @@ public class UserService {
         user.setTelephone(request.getTelephone());
         user.setAddress(request.getAddress());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setBirtDate(Date.valueOf(request.getBirthDate()));
-        user.setCreatedAt(new Date(System.currentTimeMillis()));
+        user.setBirthDate(request.getBirthDate());
+        user.setCreatedAt(LocalDateTime.now());
 
         userRepository.save(user);
         return "User registered successfully";
@@ -90,8 +103,8 @@ public class UserService {
         if (request.address() != null && !request.address().isBlank()) {
             existingUser.setAddress(request.address());
         }
-        if (request.birtDate() != null) {
-            existingUser.setBirtDate(new Date(request.birtDate().getTime()));
+        if (request.birthDate() != null) {
+            existingUser.setBirthDate(request.birthDate().toLocalDate().atStartOfDay());
         }
         if (request.isActive() != null) {
             existingUser.setIsActive(request.isActive());
@@ -124,7 +137,7 @@ public class UserService {
             user.getRole(),
             user.getTelephone(),
             user.getAddress(),
-            user.getBirtDate(),
+            user.getBirthDate(),
             user.getCreatedAt(),
             user.getDeleteAt(),
             user.getIsActive()

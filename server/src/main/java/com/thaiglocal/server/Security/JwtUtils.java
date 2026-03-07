@@ -1,79 +1,112 @@
-package com.thaiglocal.server.Security;
+package com.thaiglocal.server.security;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.time.Instant;
 import java.util.Date;
+import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
+@Component
 public class JwtUtils {
+
     @Value("${jwt.access-secret}")
     private String accessSecret;
 
-    @Value("${jwt.refresh-secret")
+    @Value("${jwt.refresh-secret}")
     private String refreshSecret;
 
-    private final long ACCESS_TOKEN_VALIDITY_MS = 5 * 1000; // 15 minute
-    private final long REFRESH_TOKEN_VALIDITY_MS = 7 * 24 * 60 * 60 * 1000; // 7 Days
+    @Value("${jwt.issuer:thai-glocal}")
+    private String issuer;
+
+    @Value("${jwt.access-expiration-ms:900000}") // 15 minutes
+    private long accessTokenValidityMs;
+
+    @Value("${jwt.refresh-expiration-ms:604800000}") // 7 days
+    private long refreshTokenValidityMs;
 
     private Key getAccessSigningKey() {
         return Keys.hmacShaKeyFor(accessSecret.getBytes(StandardCharsets.UTF_8));
     }
 
-    private Key getRefreshSigninKey() {
+    private Key getRefreshSigningKey() {
         return Keys.hmacShaKeyFor(refreshSecret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public Long extrackUserId(String token, Boolean isAccess) {
-        Claims claims = Jwts.parserBuilder()
-        .setSigningKey(isAccess ? getAccessSigningKey() : getRefreshSigninKey())
-        .build()
-        .parseClaimsJws(token)
-        .getBody();
+    private String buildToken(String userId, Key key, long validityMs, String tokenType, Map<String, Object> extraClaims) {
+        Instant now = Instant.now();
+        Instant exp = now.plusMillis(validityMs);
 
-        return Long.parseLong(claims.getSubject());
-    }
-
-    private boolean isTokenExpired(Date expiration) {
-        return expiration.before(new Date());
-    }
-
-    public String genrateAccessToken(String userId) {
-        return Jwts.builder()
+        var builder = Jwts.builder()
+            .setId(UUID.randomUUID().toString())
+            .setIssuer(issuer)
             .setSubject(userId)
-            .claim("type", "access")
-            .setIssuedAt(new Date())
-            .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_VALIDITY_MS))
-            .signWith(getAccessSigningKey(), SignatureAlgorithm.HS512)
-            .compact();
+            .claim("type", tokenType)
+            .setIssuedAt(Date.from(now))
+            .setExpiration(Date.from(exp))
+            .signWith(key, SignatureAlgorithm.HS512);
+
+        if (extraClaims != null && !extraClaims.isEmpty()) {
+            extraClaims.forEach(builder::claim);
+        }
+
+        return builder.compact();
     }
 
-    public String generateRefreshToken(String userId) {
-        return Jwts.builder()
-            .setSubject(userId)
-            .claim("type", "refresh")
-            .setIssuedAt(new Date())
-            .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_VALIDITY_MS))
-            .signWith(getAccessSigningKey(), SignatureAlgorithm.HS512)
-            .compact();
+    public String generateAccessToken(Long userId, String role) {
+        return buildToken(
+            String.valueOf(userId),
+            getAccessSigningKey(),
+            accessTokenValidityMs,
+            "access",
+            Map.of("role", role)
+        );
+    }
+
+    public String generateRefreshToken(Long userId) {
+        return buildToken(
+            String.valueOf(userId),
+            getRefreshSigningKey(),
+            refreshTokenValidityMs,
+            "refresh",
+            Map.of()
+        );
+    }
+
+    public Long extractUserId(String token, boolean isAccessToken) {
+        Claims claims = parseClaims(token, isAccessToken ? getAccessSigningKey() : getRefreshSigningKey());
+        try {
+            return Long.parseLong(claims.getSubject());
+        } catch (NumberFormatException e) {
+            throw new JwtException("Invalid subject format");
+        }
+    }
+
+    private Claims parseClaims(String token, Key key) {
+        return Jwts.parserBuilder()
+            .setSigningKey(key)
+            .requireIssuer(issuer)
+            .build()
+            .parseClaimsJws(token)
+            .getBody();
     }
 
     private boolean validateTokenWithKey(String token, Key key, String expectedType) {
         try {
-            Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-
+            Claims claims = parseClaims(token, key);
             String type = claims.get("type", String.class);
-            return expectedType.equals(type) && !isTokenExpired(claims.getExpiration());
-        } catch (Exception e) {
+            Date exp = claims.getExpiration();
+            return expectedType.equals(type) && exp != null && exp.after(new Date());
+        } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
     }
@@ -83,21 +116,28 @@ public class JwtUtils {
     }
 
     public boolean validateRefreshToken(String token) {
-        return validateTokenWithKey(token, getAccessSigningKey(), "refresh");
+        return validateTokenWithKey(token, getRefreshSigningKey(), "refresh");
     }
 
-    public String refreshAccessToken(String refreshToken) {
-        if (!validateAccessToken(refreshToken)) {
+    public String refreshAccessToken(String refreshToken, String currentRoleFromDb) {
+        if (!validateRefreshToken(refreshToken)) {
             throw new RuntimeException("Invalid or expired refresh token.");
         }
 
-        Claims claims = Jwts.parserBuilder()
-            .setSigningKey(getRefreshSigninKey())
-            .build()
-            .parseClaimsJws(refreshToken)
-            .getBody();
+        Long userId = extractUserId(refreshToken, false);
+        return generateAccessToken(userId, currentRoleFromDb);
+    }
 
-        String userId = claims.getSubject();
-        return genrateAccessToken(userId);
+    // Backward-compatible aliases (optional, remove later)
+    public Long extrackUserId(String token, Boolean isAccess) {
+        return extractUserId(token, Boolean.TRUE.equals(isAccess));
+    }
+
+    public String genrateAccessToken(String userId) {
+        return generateAccessToken(Long.parseLong(userId), "USER");
+    }
+
+    private Key getRefreshSigninKey() {
+        return getRefreshSigningKey();
     }
 }

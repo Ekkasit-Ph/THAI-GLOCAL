@@ -1,11 +1,10 @@
-package com.thaiglocal.server.Security;
+package com.thaiglocal.server.security;
 
 import java.io.IOException;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -24,6 +23,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final CustomUserDetailsService customUserDetailsService;
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return "/api/signin".equals(request.getServletPath());
+    }
+
+    @Override
     protected void doFilterInternal(
         HttpServletRequest request, 
         HttpServletResponse response, 
@@ -32,9 +36,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String accessToken = null;
         String refreshToken = null;
         Cookie[] cookies = request.getCookies();
-
         if (cookies != null) {
             for (Cookie cookie: cookies) {
+                System.out.println("cookie: " + cookie.getName());
                 if ("ACCESS_TOKEN".equals(cookie.getName())) {
                     accessToken = cookie.getValue();
                 } else if ("REFRESH_TOKEN".equals(cookie.getName())) {
@@ -43,10 +47,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        if (accessToken != null && jwtUtils.validateAccessToken(refreshToken))  {
+        if (accessToken != null && jwtUtils.validateAccessToken(accessToken)) {
             authenticateUser(accessToken, true, request);
         } else if (refreshToken != null && jwtUtils.validateRefreshToken(refreshToken)) {
-            String newAccessToken = jwtUtils.refreshAccessToken(refreshToken);
+            Long userId = jwtUtils.extractUserId(refreshToken, false);
+            UserDetails userDetails = customUserDetailsService.loadUserByUserId(userId);
+
+            String currentRoleFromDb = userDetails.getAuthorities().stream()
+                .findFirst()
+                .map(a -> a.getAuthority().replace("ROLE_", ""))
+                .orElse("USER");
+                
+            String newAccessToken = jwtUtils.refreshAccessToken(refreshToken, currentRoleFromDb);
 
             Cookie newAccessCookie = new Cookie("ACCESS_TOKEN", newAccessToken);
             newAccessCookie.setHttpOnly(true);
@@ -56,6 +68,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             authenticateUser(newAccessToken, true, request);
         }
+
+        filterChain.doFilter(request, response);
     }
 
     private void authenticateUser(String token, boolean isAccessToken, HttpServletRequest request) {
@@ -74,6 +88,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         }
     }
-
-    
 }

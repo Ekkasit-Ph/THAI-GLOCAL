@@ -1,8 +1,9 @@
-package com.thaiglocal.server.dto;
+package com.thaiglocal.server.dto.request;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
-import com.thaiglocal.server.Model.Role;
+import com.thaiglocal.server.model.enums.RoleName;;
 
 public record UserRequest(
     // Long userId,
@@ -11,10 +12,10 @@ public record UserRequest(
     String firstName,
     String lastName,    
     String password,
-    Role role,
+    RoleName role,
     String telephone,
     String address,
-    Date birtDate,
+    LocalDateTime birthDate,
     // Date createdAt,
     // Date deleteAt,
     Boolean isActive
