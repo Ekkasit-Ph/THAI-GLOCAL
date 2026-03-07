@@ -19,7 +19,7 @@ public class CenterImageService {
 
     private final WebClient webClient;
 
-public CenterImageService(WebClient.Builder builder,
+    public CenterImageService(WebClient.Builder builder,
             @Value("${server.api.base-url:http://localhost:8081}") String baseUrl) {
         this.webClient = builder
                 .baseUrl(baseUrl)
