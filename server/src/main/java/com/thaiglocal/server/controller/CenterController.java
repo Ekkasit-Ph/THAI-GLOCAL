@@ -65,8 +65,8 @@ public class CenterController {
         return ResponseEntity.ok().build(); // HTTP 200 OK
     }
 
-    // Method: DELETE /api/centers/{centerId}
-    @DeleteMapping("/{centerId}")
+    // Method: DELETE /api/centers/delete/{centerId}
+    @DeleteMapping("/delete/{centerId}")
     public ResponseEntity<Void> deleteCenter(@PathVariable Long centerId) {
         centerService.deleteCenter(centerId);
         return ResponseEntity.noContent().build(); // HTTP 204 No Content
