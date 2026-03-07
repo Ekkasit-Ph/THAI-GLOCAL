@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 
 import com.thaiglocal.server.dto.request.CenterRequest;
 import com.thaiglocal.server.dto.response.CenterResponse;
+import com.thaiglocal.server.exception.InvalidRoleException;
+import com.thaiglocal.server.exception.NotFoundException;
 import com.thaiglocal.server.model.Center;
 import com.thaiglocal.server.model.User;
 import com.thaiglocal.server.model.enums.RoleName;
@@ -70,7 +72,7 @@ public class CenterService {
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
         if (!user.getRole().equals(RoleName.CENTER_ADMIN)) {
-            throw new RuntimeException("User with id: " + userId + " is not a CENTER_ADMIN");
+            throw new InvalidRoleException("Role must be "+ RoleName.CENTER_ADMIN + " to access this resource");
         }
 
         List<Center> centers = user.getCenterBelongUsers().stream()
@@ -106,7 +108,7 @@ public class CenterService {
     @Transactional
     public void updateCenter(Long centerId, CenterRequest request) {
         Center center = centerRepository.findById(centerId)
-                .orElseThrow(() -> new RuntimeException("Center not found with id: " + centerId));
+                .orElseThrow(() -> new NotFoundException("Center not found with id: " + centerId));
         if (request.getCenterName() != null) {
             center.setCenterName(request.getCenterName());
         }
@@ -158,7 +160,7 @@ public class CenterService {
 
     public void deleteCenter(Long centerId) {
         Center center = centerRepository.findById(centerId)
-                .orElseThrow(() -> new RuntimeException("Center not found with id: " + centerId));
+                .orElseThrow(() -> new NotFoundException("Center not found with id: " + centerId));
         centerRepository.delete(center);
     }
 }

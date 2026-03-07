@@ -17,4 +17,13 @@ public class GlobalExceptionHandler {
                 .build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
+
+    @ExceptionHandler(InvalidRoleException.class)
+    public ResponseEntity<ExceptionResponse> handleInvalidRoleException(InvalidRoleException ex) {
+        ExceptionResponse response = ExceptionResponse.builder()
+                .status(HttpStatus.FORBIDDEN.value())
+                .message(ex.getMessage())
+                .build();
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
 }
