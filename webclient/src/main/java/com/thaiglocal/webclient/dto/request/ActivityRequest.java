@@ -4,14 +4,24 @@ import java.time.LocalDateTime;
 
 public class ActivityRequest {
     private String activityName;
+    private String description;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
-    private String description;
     private LocalDateTime dateCanRegister;
     private Double price;
     private Integer registerCapacity;
 
     public ActivityRequest() {}
+
+    public ActivityRequest(String activityName, String description, LocalDateTime startDate, LocalDateTime endDate, LocalDateTime dateCanRegister, Double price, Integer registerCapacity) {
+        this.activityName = activityName;
+        this.description = description;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.dateCanRegister = dateCanRegister;
+        this.price = price;
+        this.registerCapacity = registerCapacity;
+    }
 
     public String getActivityName() { return activityName; }
     public void setActivityName(String activityName) { this.activityName = activityName; }

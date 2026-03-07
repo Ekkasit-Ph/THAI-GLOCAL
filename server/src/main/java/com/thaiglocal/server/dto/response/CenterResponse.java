@@ -31,7 +31,6 @@ public class CenterResponse {
     private String leaderFirstName;
     private String leaderLastName;
     private String leaderTelephone;
-
     private List<String> centerImages;
     private List<String> telephones;
 }

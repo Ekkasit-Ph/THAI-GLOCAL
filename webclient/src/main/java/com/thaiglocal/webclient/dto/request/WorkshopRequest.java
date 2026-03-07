@@ -1,34 +1,37 @@
 package com.thaiglocal.webclient.dto.request;
 
+import com.thaiglocal.webclient.dto.enums.WorkshopType;
+
 public class WorkshopRequest {
-    private String name;
+    private String workshopName;
     private String description;
-    private String Timetable;
     private Double price;
-    private Integer MemberCapacity;
+    private Integer memberCapacity;
+    private WorkshopType workshopType;
 
     public WorkshopRequest() {}
 
-    public WorkshopRequest(String name, String description, String Timetable, Double price, Integer MemberCapacity) {
-        this.name = name;
+    public WorkshopRequest(String workshopName, String description, Double price, Integer memberCapacity, WorkshopType workshopType) {
+        this.workshopName = workshopName;
         this.description = description;
-        this.Timetable = Timetable;
         this.price = price;
-        this.MemberCapacity = MemberCapacity;
+        this.memberCapacity = memberCapacity;
+        this.workshopType = workshopType;
     }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+
+    public String getWorkshopName() { return workshopName; }
+    public void setWorkshopName(String workshopName) { this.workshopName = workshopName; }
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
-    public String getTimetable() { return Timetable; }
-    public void setTimetable(String Timetable) { this.Timetable = Timetable;}
-
     public Double getPrice() { return price; }
     public void setPrice(Double price) { this.price = price; }
 
-    public Integer getMemberCapacity() { return MemberCapacity; }
-    public void setMemberCapacity(Integer MemberCapacity) { this.MemberCapacity = MemberCapacity; }
+    public Integer getMemberCapacity() { return memberCapacity; }
+    public void setMemberCapacity(Integer memberCapacity) { this.memberCapacity = memberCapacity; }
+
+    public WorkshopType getWorkshopType() { return workshopType; }
+    public void setWorkshopType(WorkshopType workshopType) { this.workshopType = workshopType; }
 }
