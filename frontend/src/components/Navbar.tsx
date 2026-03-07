@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { Menu, X, BookOpen, Map, CalendarCheck, User, LogOut, Building2, ShieldAlert } from "lucide-react";
+import { Menu, X, BookOpen, Map, CalendarCheck, User, LogOut, Building2, ShieldAlert, Globe } from "lucide-react";
 import useBookingStore from "../store/bookingStore";
 import useAuthStore from "../store/authStore";
+import useLanguageStore from "../store/languageStore";
+import { useTranslation } from "../i18n/useTranslation";
 
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -12,6 +14,8 @@ export function Navbar() {
   const bookings = useBookingStore((s) => s.bookings);
   const activeCount = bookings.filter((b) => b.status === "confirmed").length;
   const { user, logout } = useAuthStore();
+  const { language, setLanguage } = useLanguageStore();
+  const { t } = useTranslation();
   const profileRef = useRef<HTMLDivElement>(null);
 
   // Close profile dropdown on outside click
@@ -41,17 +45,23 @@ export function Navbar() {
     navigate("/");
   };
 
+  const toggleLanguage = () => {
+    setLanguage(language === "en" ? "th" : "en");
+  };
+
   const navLinks = [
-    { to: "/", label: "Home", icon: null },
-    { to: "/workshops", label: "Workshops", icon: null },
-    { to: "/centers", label: "Centers", icon: Map },
-    ...(user ? [
-      { to: "/my-bookings", label: "My Bookings", icon: CalendarCheck },
-      { to: "/my-center", label: "My Center", icon: Building2 },
-    ] : []),
-    ...(user && (user.role === "admin" || user.role === "super_admin") ? [
-      { to: "/admin", label: "Admin Panel", icon: ShieldAlert },
-    ] : [])
+    { to: "/", label: t.nav.home, icon: null },
+    { to: "/workshops", label: t.nav.workshops, icon: null },
+    { to: "/centers", label: t.nav.centers, icon: Map },
+    ...(user
+      ? [
+          { to: "/my-bookings", label: t.nav.myBookings, icon: CalendarCheck },
+          { to: "/my-center", label: t.nav.myCenter, icon: Building2 },
+        ]
+      : []),
+    ...(user && (user.role === "admin" || user.role === "super_admin")
+      ? [{ to: "/admin", label: t.nav.adminPanel, icon: ShieldAlert }]
+      : []),
   ];
 
   const isActive = (path: string) => {
@@ -94,7 +104,10 @@ export function Navbar() {
                 {link.icon && <link.icon className="w-4 h-4" />}
                 {link.label}
                 {link.to === "/my-bookings" && activeCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-amber-500 text-white rounded-full flex items-center justify-center" style={{ fontSize: "0.6rem" }}>
+                  <span
+                    className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-amber-500 text-white rounded-full flex items-center justify-center"
+                    style={{ fontSize: "0.6rem" }}
+                  >
                     {activeCount}
                   </span>
                 )}
@@ -102,15 +115,29 @@ export function Navbar() {
             ))}
           </div>
 
-          {/* Auth area (desktop) */}
+          {/* Auth area + Language switch (desktop) */}
           <div className="hidden md:flex items-center gap-2">
+            {/* Language Toggle */}
+            <button
+              onClick={toggleLanguage}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-stone-200 hover:border-amber-300 hover:bg-amber-50 transition-colors text-stone-600 hover:text-amber-700"
+              title={t.langSwitch.label}
+              style={{ fontSize: "0.8rem" }}
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <span className="font-semibold tracking-wide">{language === "en" ? "TH" : "EN"}</span>
+            </button>
+
             {user ? (
               <div className="relative" ref={profileRef}>
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-stone-50 transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white font-semibold shadow-sm select-none" style={{ fontSize: "0.7rem" }}>
+                  <div
+                    className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white font-semibold shadow-sm select-none"
+                    style={{ fontSize: "0.7rem" }}
+                  >
                     {initials}
                   </div>
                   <span className="text-stone-700 font-medium" style={{ fontSize: "0.875rem" }}>
@@ -130,14 +157,14 @@ export function Navbar() {
                       className="flex items-center gap-2 px-4 py-2 text-stone-600 hover:bg-stone-50 transition-colors text-sm"
                     >
                       <User className="w-4 h-4" />
-                      My Profile
+                      {t.nav.myProfile}
                     </Link>
                     <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 transition-colors text-sm"
                     >
                       <LogOut className="w-4 h-4" />
-                      Sign Out
+                      {t.nav.signOut}
                     </button>
                   </div>
                 )}
@@ -149,14 +176,14 @@ export function Navbar() {
                   className="px-4 py-2 text-stone-600 hover:text-stone-900 rounded-xl hover:bg-stone-50 transition-colors"
                   style={{ fontSize: "0.875rem" }}
                 >
-                  Sign In
+                  {t.nav.signIn}
                 </Link>
                 <Link
                   to="/signup"
                   className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl transition-colors shadow-sm"
                   style={{ fontSize: "0.875rem" }}
                 >
-                  Sign Up
+                  {t.nav.signUp}
                 </Link>
               </>
             )}
@@ -189,7 +216,10 @@ export function Navbar() {
               {link.icon && <link.icon className="w-4 h-4" />}
               {link.label}
               {link.to === "/my-bookings" && activeCount > 0 && (
-                <span className="ml-auto w-5 h-5 bg-amber-500 text-white rounded-full flex items-center justify-center" style={{ fontSize: "0.65rem" }}>
+                <span
+                  className="ml-auto w-5 h-5 bg-amber-500 text-white rounded-full flex items-center justify-center"
+                  style={{ fontSize: "0.65rem" }}
+                >
                   {activeCount}
                 </span>
               )}
@@ -197,10 +227,22 @@ export function Navbar() {
           ))}
 
           <div className="mt-2 pt-2 border-t border-stone-100 flex flex-col gap-1">
+            {/* Language Toggle (mobile) */}
+            <button
+              onClick={toggleLanguage}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-stone-600 hover:bg-amber-50 hover:text-amber-700 transition-colors text-sm font-medium"
+            >
+              <Globe className="w-4 h-4" />
+              {t.langSwitch.label}: {language === "en" ? "English → ภาษาไทย" : "ภาษาไทย → English"}
+            </button>
+
             {user ? (
               <>
                 <div className="flex items-center gap-3 px-4 py-2">
-                  <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white font-semibold shadow-sm select-none" style={{ fontSize: "0.7rem" }}>
+                  <div
+                    className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white font-semibold shadow-sm select-none"
+                    style={{ fontSize: "0.7rem" }}
+                  >
                     {initials}
                   </div>
                   <div>
@@ -214,14 +256,14 @@ export function Navbar() {
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-stone-600 hover:bg-stone-50 transition-colors"
                 >
                   <User className="w-4 h-4" />
-                  My Profile
+                  {t.nav.myProfile}
                 </Link>
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-red-600 hover:bg-red-50 transition-colors text-sm font-medium"
                 >
                   <LogOut className="w-4 h-4" />
-                  Sign Out
+                  {t.nav.signOut}
                 </button>
               </>
             ) : (
@@ -231,14 +273,14 @@ export function Navbar() {
                   onClick={() => setMenuOpen(false)}
                   className="px-4 py-2.5 rounded-xl text-stone-600 hover:bg-stone-50 transition-colors text-center text-sm"
                 >
-                  Sign In
+                  {t.nav.signIn}
                 </Link>
                 <Link
                   to="/signup"
                   onClick={() => setMenuOpen(false)}
                   className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-center transition-colors text-sm font-medium"
                 >
-                  Sign Up
+                  {t.nav.signUp}
                 </Link>
               </>
             )}

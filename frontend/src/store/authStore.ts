@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import useLanguageStore from "./languageStore";
 
 export interface UserProfile {
   id: string;
@@ -10,6 +11,7 @@ export interface UserProfile {
   avatar?: string;
   role?: "user" | "center" | "admin" | "super_admin";
   status?: "active" | "suspended";
+  language?: "en" | "th";
 }
 
 interface AuthState {
@@ -52,6 +54,9 @@ const useAuthStore = create<AuthState>()(
 
         const { password: _pw, ...profile } = found;
         set({ user: profile });
+        if (profile.language) {
+          useLanguageStore.getState().setLanguage(profile.language);
+        }
       },
 
       signup: async (name, email, password) => {

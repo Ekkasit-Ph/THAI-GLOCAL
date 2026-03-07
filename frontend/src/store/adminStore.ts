@@ -21,22 +21,32 @@ export interface CenterRegistrationRequest {
   createdAt: string;
 }
 
+export type CenterStatus = "active" | "suspended" | "disabled";
+
 export interface AdminState {
   registrationRequests: CenterRegistrationRequest[];
-  users: UserProfile[]; // mocked for admin view
+  users: UserProfile[];
   adminCenters: Center[];
+  centerStatuses: Record<string, CenterStatus>;
+
   addRegistrationRequest: (req: Omit<CenterRegistrationRequest, "id" | "status" | "createdAt">) => void;
   updateRequestStatus: (id: string, status: "approved" | "rejected") => void;
+
   updateUserRole: (userId: string, role: "user" | "center" | "admin" | "super_admin") => void;
   updateUserStatus: (userId: string, status: "active" | "suspended") => void;
+  updateUserInfo: (userId: string, data: { name?: string; phone?: string; email?: string }) => void;
+
+  updateAdminCenter: (centerId: string, data: Partial<Omit<Center, "id">>) => void;
+  updateCenterStatus: (centerId: string, status: CenterStatus) => void;
   deleteCenter: (centerId: string) => void;
   syncUsers: () => void;
 }
 
 const useAdminStore = create<AdminState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       adminCenters: centers,
+      centerStatuses: {},
       registrationRequests: [
         {
           id: "req-1",
@@ -84,41 +94,61 @@ const useAdminStore = create<AdminState>()(
         set((s) => ({
           users: s.users.map((u) => (u.id === userId ? { ...u, role } : u)),
         }));
-        
         try {
           const stored = localStorage.getItem("tg_users");
           if (stored) {
             const lsUsers = JSON.parse(stored);
-            const idx = lsUsers.findIndex((u: any) => u.id === userId);
-            if (idx !== -1) {
-              lsUsers[idx].role = role;
-              localStorage.setItem("tg_users", JSON.stringify(lsUsers));
-            }
+            const idx = lsUsers.findIndex((u: { id: string }) => u.id === userId);
+            if (idx !== -1) { lsUsers[idx].role = role; localStorage.setItem("tg_users", JSON.stringify(lsUsers)); }
           }
-        } catch (e) {}
+        } catch (_e) {}
       },
 
       updateUserStatus: (userId, status) => {
         set((s) => ({
           users: s.users.map((u) => (u.id === userId ? { ...u, status } : u)),
         }));
-        
         try {
           const stored = localStorage.getItem("tg_users");
           if (stored) {
             const lsUsers = JSON.parse(stored);
-            const idx = lsUsers.findIndex((u: any) => u.id === userId);
-            if (idx !== -1) {
-              lsUsers[idx].status = status;
-              localStorage.setItem("tg_users", JSON.stringify(lsUsers));
-            }
+            const idx = lsUsers.findIndex((u: { id: string }) => u.id === userId);
+            if (idx !== -1) { lsUsers[idx].status = status; localStorage.setItem("tg_users", JSON.stringify(lsUsers)); }
           }
-        } catch (e) {}
+        } catch (_e) {}
+      },
+
+      updateUserInfo: (userId, data) => {
+        set((s) => ({
+          users: s.users.map((u) => (u.id === userId ? { ...u, ...data } : u)),
+        }));
+        try {
+          const stored = localStorage.getItem("tg_users");
+          if (stored) {
+            const lsUsers = JSON.parse(stored);
+            const idx = lsUsers.findIndex((u: { id: string }) => u.id === userId);
+            if (idx !== -1) { Object.assign(lsUsers[idx], data); localStorage.setItem("tg_users", JSON.stringify(lsUsers)); }
+          }
+        } catch (_e) {}
+      },
+
+      updateAdminCenter: (centerId, data) => {
+        set((s) => ({
+          adminCenters: s.adminCenters.map((c) =>
+            c.id === centerId ? { ...c, ...data } : c
+          ),
+        }));
+      },
+
+      updateCenterStatus: (centerId, status) => {
+        set((s) => ({
+          centerStatuses: { ...s.centerStatuses, [centerId]: status },
+        }));
       },
 
       deleteCenter: (centerId) => {
         set((s) => ({
-          adminCenters: s.adminCenters.filter((c) => c.id !== centerId)
+          adminCenters: s.adminCenters.filter((c) => c.id !== centerId),
         }));
       },
 
@@ -129,7 +159,7 @@ const useAdminStore = create<AdminState>()(
             const lsUsers = JSON.parse(stored);
             set({ users: lsUsers });
           }
-        } catch (e) {}
+        } catch (_e) {}
       }
     }),
     { name: "tg_admin" }

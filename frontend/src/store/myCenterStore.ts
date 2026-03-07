@@ -65,6 +65,8 @@ export interface BookingRequest {
   id: string;
   sessionId: string;
   workshopId: string;
+  centerId?: string;
+  userId?: string;
   createdAt: string;
   firstName: string;
   lastName: string;
@@ -103,6 +105,8 @@ interface MyCenterState {
   getWorkshopById: (id: string) => UserWorkshop | undefined;
   getSessionsByWorkshop: (workshopId: string) => UserSession[];
   getBookingsBySession: (sessionId: string) => BookingRequest[];
+  getBookingsByWorkshop: (workshopId: string) => BookingRequest[];
+  getBookingsByUser: (userId: string) => BookingRequest[];
 
   requestCancellation: (id: string, requestedBy: "center" | "participant") => void;
   approveCancellation: (id: string) => void;
@@ -288,6 +292,12 @@ const useMyCenterStore = create<MyCenterState>()(
 
       getBookingsBySession: (sessionId) =>
         get().bookings.filter((b) => b.sessionId === sessionId),
+
+      getBookingsByWorkshop: (workshopId) =>
+        get().bookings.filter((b) => b.workshopId === workshopId),
+
+      getBookingsByUser: (userId) =>
+        get().bookings.filter((b) => b.userId === userId),
 
       requestCancellation: (id, requestedBy) =>
         set((s) => ({
