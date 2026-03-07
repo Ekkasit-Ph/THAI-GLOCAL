@@ -11,6 +11,7 @@ import { ProfilePage } from "./pages/ProfilePage";
 import { MyCenterPage } from "./pages/MyCenterPage";
 import { WorkshopSessionsPage } from "./pages/WorkshopSessionsPage";
 import { CreateProfilePage } from "./pages/CreateProfilePage";
+import { AdminPage } from "./pages/AdminPage";
 
 export const router = createBrowserRouter([
   {
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
       { path: "profile", Component: ProfilePage },
       { path: "my-center", Component: MyCenterPage },
       { path: "my-center/workshop/:workshopId", Component: WorkshopSessionsPage },
+      { path: "admin", Component: AdminPage },
       { path: "*", element: <Navigate to="/" replace /> },
     ],
   },
