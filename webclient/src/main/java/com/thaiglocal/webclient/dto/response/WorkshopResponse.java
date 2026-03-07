@@ -1,12 +1,14 @@
 package com.thaiglocal.webclient.dto.response;
 
-import com.thaiglocal.webclient.dto.enums.WorkshopType;
+import java.util.List;
 
 public record WorkshopResponse(
-    Long workshopId,
-    String workshopName,
-    String description,
-    Double price,
-    Integer memberCapacity,
-    WorkshopType workshopType
-) {}
+        Long workshopId,
+        String workshopName,
+        String description,
+        Double price,
+        Integer memberCapacity,
+        String workshopType,
+        List<String> workshopImages,
+        List<ActivityResponse> activities) {
+}
