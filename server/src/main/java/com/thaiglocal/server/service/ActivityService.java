@@ -6,9 +6,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.thaiglocal.server.dto.request.ActivityRequest;
+import com.thaiglocal.server.dto.response.ActivityRegisterReponse;
 import com.thaiglocal.server.dto.response.ActivityResponse;
 import com.thaiglocal.server.model.Activity;
 import com.thaiglocal.server.model.Workshop;
+import com.thaiglocal.server.repository.ActivityRegisterRepository;
 import com.thaiglocal.server.repository.ActivityRepository;
 import com.thaiglocal.server.repository.WorkshopRepository;
 
@@ -16,16 +18,28 @@ import com.thaiglocal.server.repository.WorkshopRepository;
 public class ActivityService {
     private final ActivityRepository activityRepository;
     private final WorkshopRepository workshopRepository;
+    private final ActivityRegisterRepository activityRegisterRepository;
 
     public ActivityService(
         ActivityRepository activityRepository,
-        WorkshopRepository workshopRepository
+        WorkshopRepository workshopRepository,
+        ActivityRegisterRepository activityRegisterRepository
     ) {
         this.activityRepository = activityRepository;
         this.workshopRepository = workshopRepository;
+        this.activityRegisterRepository = activityRegisterRepository;
     }
 
     private ActivityResponse mapToActivityResponse(Activity activity) {
+        List<ActivityRegisterReponse> registerInfo = activity.getActivityRegisters().stream()
+                .map(activityRegister -> ActivityRegisterReponse.builder()
+                        .activityRegisterId(activityRegister.getActivityRegisterId())
+                        .username(activityRegister.getUser().getUsername())
+                        .numberOfRegister(activityRegister.getNumberOfRegister())
+                        .status(activityRegister.getStatus())
+                        .build())
+                .toList();
+                
         return ActivityResponse.builder()
                 .activityId(activity.getActivityId())
                 .activityName(activity.getActivityName())
@@ -35,6 +49,7 @@ public class ActivityService {
                 .dateCanRegister(activity.getDateCanRegister())
                 .price(activity.getPrice())
                 .registerCapacity(activity.getRegisterCapacity())
+                .registerInfo(registerInfo)
                 .build();
     }
 
