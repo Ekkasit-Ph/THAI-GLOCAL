@@ -84,7 +84,7 @@ public class UserService {
 
     public Mono<UserResponse> adminUpdateUserByUserId(Long targetUserId, UserRequest request) {
         return webClient.patch()
-            .uri("admin/users/" + targetUserId)
+            .uri("/admin/users/" + targetUserId)
             .header("Content-Type", "application/json")
             .body(Mono.just(request), UserRequest.class)
             .retrieve()
@@ -93,7 +93,7 @@ public class UserService {
 
     public Mono<UserResponse> grantAdminRole(Long targetUserId, RoleRequest roleRequest) {
         return webClient.patch()
-            .uri("/admin/usrs/role/" + targetUserId)
+            .uri("/admin/users/role/" + targetUserId)
             .header("Content-Type", "application/json")
             .body(Mono.just(roleRequest), RoleRequest.class)
             .retrieve()
@@ -108,5 +108,11 @@ public class UserService {
             .retrieve()
             .bodyToMono(String.class);
     }
-}
 
+    public Mono<Void> deleteUser(Long targetUserId) {
+        return webClient.delete()
+            .uri("/admin/users/" + targetUserId)
+            .retrieve()
+            .bodyToMono(Void.class);
+    }
+}

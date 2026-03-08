@@ -7,9 +7,11 @@ export function SignUpPage() {
   const navigate = useNavigate();
   const signup = useAuthStore((s) => s.signup);
 
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [role, setRole] = useState("USER");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,14 +19,28 @@ export function SignUpPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    // Regex for basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
+
     if (password !== confirm) {
       setError("Passwords do not match.");
       return;
     }
+
     setLoading(true);
     try {
-      await signup(email.trim(), password);
-      navigate("/create-profile", { replace: true });
+      await signup({ username: username.trim(), email: email.trim(), password, role });
+      navigate("/login", { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Sign up failed.");
     } finally {
@@ -53,6 +69,24 @@ export function SignUpPage() {
           )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+
+            {/* Username */}
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-stone-700 mb-1.5">
+                Username
+              </label>
+              <input
+                id="username"
+                type="text"
+                autoComplete="username"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="your_username"
+                className="w-full px-4 py-2.5 rounded-xl border border-stone-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none transition text-stone-800 text-sm"
+              />
+            </div>
+
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-stone-700 mb-1.5">
@@ -113,6 +147,23 @@ export function SignUpPage() {
                 placeholder="••••••••"
                 className="w-full px-4 py-2.5 rounded-xl border border-stone-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none transition text-stone-800 text-sm"
               />
+            </div>
+
+            {/* Role */}
+            <div>
+              <label htmlFor="role" className="block text-sm font-medium text-stone-700 mb-1.5">
+                Account Role
+              </label>
+              <select
+                id="role"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-stone-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none transition text-stone-800 text-sm bg-white"
+              >
+                <option value="USER">Standard User</option>
+                <option value="CENTER_ADMIN">Center Admin</option>
+                <option value="CENTER_STAFF">Center Staff</option>
+              </select>
             </div>
 
             {/* Submit */}

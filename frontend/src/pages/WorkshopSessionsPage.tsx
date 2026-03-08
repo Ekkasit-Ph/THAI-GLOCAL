@@ -269,7 +269,7 @@ export function WorkshopSessionsPage() {
 
   if (!user) return <Navigate to="/login" state={{ from: `/my-center/workshop/${workshopId}` }} replace />;
 
-  const workshop = workshopId ? store.getWorkshopById(workshopId) : undefined;
+  const workshop = workshopId ? (store as any).getWorkshopById(workshopId) : undefined;
 
   if (!workshop || workshop.ownerId !== user.id) {
     return (
@@ -286,14 +286,14 @@ export function WorkshopSessionsPage() {
     );
   }
 
-  const sessions = store.getSessionsByWorkshop(workshop.id);
+  const sessions = (store as any).getSessionsByWorkshop((workshop as any).id);
 
   const saveSession = (data: typeof EMPTY_SESSION) => {
     if (editingSession) {
       store.updateSession(editingSession.id, data);
       setEditingSession(null);
     } else {
-      store.createSession({
+      (store as any).createSession({
         ...data,
         workshopId: workshop.id,
         centerId: workshop.centerId,
@@ -304,8 +304,8 @@ export function WorkshopSessionsPage() {
   };
 
   const handleDelete = (id: string) => {
-    const bookings = store.getBookingsBySession(id);
-    const hasActiveBookings = bookings.some(b => ["pending", "approved", "confirmed"].includes(b.status));
+    const bookings = (store as any).getBookingsBySession(id);
+    const hasActiveBookings = bookings.some((b: any) => ["pending", "approved", "confirmed"].includes(b.status));
     if (hasActiveBookings) {
       setErrorMessage("Error: Activity cannot be deleted because there are active bookings.\n\nTo delete an activity with existing participants, the organizer must first cancel/remove all bookings. Deletion is only permitted once all participants have approved the cancellation.");
       return;
@@ -315,8 +315,8 @@ export function WorkshopSessionsPage() {
   };
 
   if (activeSession) {
-    const sessionBookings = store.getBookingsBySession(activeSession.id);
-    const confirmedCount = sessionBookings.filter(b => b.status === "confirmed").length;
+    const sessionBookings = (store as any).getBookingsBySession(activeSession.id);
+    const confirmedCount = sessionBookings.filter((b: any) => b.status === "confirmed").length;
 
     return (
       <>
@@ -374,7 +374,7 @@ export function WorkshopSessionsPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-stone-900 border-l-4 border-amber-500 pl-3">Booking Approval & Management</h2>
               <button 
-                onClick={() => store.createMockBooking(activeSession.id, workshop.id)}
+                onClick={() => (store as any).createMockBooking(activeSession.id, workshop.id)}
                 className="text-xs px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg flex items-center gap-1 transition-colors font-medium shadow-sm"
                 title="Only for testing"
               >
@@ -385,15 +385,15 @@ export function WorkshopSessionsPage() {
             {/* Quick Stats */}
             <div className="grid grid-cols-3 gap-3 mb-6">
               <div className="bg-amber-50 border border-amber-100 p-3 rounded-2xl flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold text-amber-600">{sessionBookings.filter(b => b.status === 'pending').length}</span>
+                <span className="text-2xl font-bold text-amber-600">{sessionBookings.filter((b: any) => b.status === 'pending').length}</span>
                 <span className="text-xs font-bold text-amber-800 uppercase mt-1">Pending</span>
               </div>
               <div className="bg-blue-50 border border-blue-100 p-3 rounded-2xl flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold text-blue-600">{sessionBookings.filter(b => b.status === 'approved').length}</span>
+                <span className="text-2xl font-bold text-blue-600">{sessionBookings.filter((b: any) => b.status === 'approved').length}</span>
                 <span className="text-xs font-bold text-blue-800 uppercase mt-1">Approved</span>
               </div>
               <div className="bg-green-50 border border-green-100 p-3 rounded-2xl flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold text-green-600">{sessionBookings.filter(b => b.status === 'confirmed').length}</span>
+                <span className="text-2xl font-bold text-green-600">{sessionBookings.filter((b: any) => b.status === 'confirmed').length}</span>
                 <span className="text-xs font-bold text-green-800 uppercase mt-1">Confirmed</span>
               </div>
             </div>
@@ -406,7 +406,7 @@ export function WorkshopSessionsPage() {
               </div>
             ) : (
               <div className="flex flex-col gap-4">
-                {sessionBookings.map(req => (
+                {sessionBookings.map((req: any) => (
                   <div key={req.id} className={`bg-white rounded-2xl border-l-4 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-5 transition-shadow hover:shadow-md
                     ${req.status === 'pending' ? 'border-l-amber-400 border-y-stone-100 border-r-stone-100' :
                       req.status === 'approved' ? 'border-l-blue-400 border-y-stone-100 border-r-stone-100' :
@@ -456,7 +456,7 @@ export function WorkshopSessionsPage() {
                         </button>
                       )}
                       {req.status === "cancellation_requested" && req.cancelRequestedBy === "participant" && (
-                        <button onClick={() => store.approveCancellation(req.id)} className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold shadow-sm transition-transform active:scale-95 flex items-center gap-2">
+                        <button onClick={() => (store as any).approveCancellation(req.id)} className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold shadow-sm transition-transform active:scale-95 flex items-center gap-2">
                           <CheckCircle2 className="w-4 h-4" /> Approve Cancellation
                         </button>
                       )}
@@ -466,7 +466,7 @@ export function WorkshopSessionsPage() {
                       {(req.status === "confirmed" || req.status === "approved" || req.status === "pending") && (
                         <button onClick={() => {
                           if (req.status === "confirmed") {
-                            store.requestCancellation(req.id, "center");
+                            (store as any).requestCancellation(req.id, "center");
                             alert("Cancellation requested. Waiting for user's approval.");
                           } else {
                             store.updateBookingStatus(req.id, "cancelled");
@@ -489,8 +489,8 @@ export function WorkshopSessionsPage() {
 
   // Group sessions: upcoming vs past
   const today = new Date().toISOString().slice(0, 10);
-  const upcoming = sessions.filter((s) => s.date >= today && s.status !== "cancelled" && s.status !== "completed");
-  const past = sessions.filter((s) => s.date < today || s.status === "cancelled" || s.status === "completed");
+  const upcoming = sessions.filter((s: any) => s.date >= today && s.status !== "cancelled" && s.status !== "completed");
+  const past = sessions.filter((s: any) => s.date < today || s.status === "cancelled" || s.status === "completed");
 
   return (
     <>
@@ -560,7 +560,7 @@ export function WorkshopSessionsPage() {
           {[
             { label: "Total activities", value: sessions.length },
             { label: "Upcoming", value: upcoming.length },
-            { label: "Completed", value: sessions.filter((s) => s.status === "completed").length },
+            { label: "Completed", value: sessions.filter((s: any) => s.status === "completed").length },
           ].map(({ label, value }) => (
             <div key={label} className="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 text-center">
               <p className="text-2xl font-bold text-stone-800">{value}</p>
@@ -615,8 +615,8 @@ export function WorkshopSessionsPage() {
               <p className="text-stone-400 text-sm">No upcoming activities. Add one above.</p>
             </div>
           ) : (
-            upcoming.map((s) => {
-              const hasBookings = store.getBookingsBySession(s.id).length > 0;
+            upcoming.map((s: any) => {
+              const hasBookings = (store as any).getBookingsBySession(s.id).length > 0;
               return (
                 <div key={s.id}>
                   {confirmDeleteId === s.id ? (
@@ -663,7 +663,7 @@ export function WorkshopSessionsPage() {
             <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wide">
               Past & Cancelled ({past.length})
             </h2>
-            {past.map((s) => (
+            {past.map((s: any) => (
               <div key={s.id}>
                 {confirmDeleteId === s.id ? (
                   <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-center justify-between gap-3">

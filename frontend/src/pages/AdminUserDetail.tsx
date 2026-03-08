@@ -178,13 +178,13 @@ function UserInfoTab({ userId }: { userId: string }) {
 function UserBookingsTab({ userId, userName }: { userId: string; userName: string }) {
   const { t } = useTranslation();
   const db = t.userDetail.bookings;
-  const allBookings = useMyCenterStore((s) => s.bookings);
+  const allBookings = useMyCenterStore((s: any) => s.myBookings || s.bookings);
   const workshops = useMyCenterStore((s) => s.workshops);
   const sessions = useMyCenterStore((s) => s.sessions);
   const updateBookingStatus = useMyCenterStore((s) => s.updateBookingStatus);
 
   // Match by userId if present, otherwise by full name
-  const userBookings = allBookings.filter((b) => {
+  const userBookings = allBookings?.filter((b: any) => {
     if (b.userId) return b.userId === userId;
     // Fallback: name-based matching for legacy bookings
     const fullName = `${b.firstName} ${b.lastName}`.toLowerCase();
@@ -243,7 +243,7 @@ function UserBookingsTab({ userId, userName }: { userId: string; userName: strin
               </tr>
             </thead>
             <tbody>
-              {userBookings.map((b) => (
+              {userBookings?.map((b: any) => (
                 <tr key={b.id} className="border-b border-stone-100 hover:bg-stone-50 transition">
                   <td className="p-3 font-medium text-stone-900">{getWorkshopTitle(b.workshopId)}</td>
                   <td className="p-3 text-stone-600">{getSessionInfo(b.sessionId)}</td>

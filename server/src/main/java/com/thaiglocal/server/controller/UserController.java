@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 import com.thaiglocal.server.dto.request.ForgetPasswordRequest;
 import com.thaiglocal.server.dto.request.RoleRequest;
@@ -293,4 +294,10 @@ public class UserController {
         return ResponseEntity.ok(userResponse);
     }
 
+
+    @DeleteMapping("/admin/users/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
+    }
 }

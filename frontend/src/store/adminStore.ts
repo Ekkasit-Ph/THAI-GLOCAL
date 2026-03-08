@@ -1,169 +1,160 @@
+﻿
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { UserProfile } from "./authStore";
-import { centers, Center } from "../data/mockData";
+import apiClient from "../api/axiosClient";
 
-export interface CenterRegistrationRequest {
+export interface AdminUser {
   id: string;
-  userId: string;
   name: string;
-  address: string;
-  telephones: string[]; // max 3, min 1
   email: string;
-  lineId: string;
-  facebook: string;
-  website: string;
-  providers: string[]; // can contain multiple people
-  communityLeaderFirstName: string;
-  communityLeaderLastName: string;
-  communityLeaderTelephone: string;
+  role: string;
+  status: "active" | "inactive";
+  lastLogin: string;
+}
+
+export interface AdminCenter {
+  id: string;
+  name: string;
+  owner: string;
   status: "pending" | "approved" | "rejected";
   createdAt: string;
 }
 
-export type CenterStatus = "active" | "suspended" | "disabled";
-
-export interface AdminState {
-  registrationRequests: CenterRegistrationRequest[];
-  users: UserProfile[];
-  adminCenters: Center[];
-  centerStatuses: Record<string, CenterStatus>;
-
-  addRegistrationRequest: (req: Omit<CenterRegistrationRequest, "id" | "status" | "createdAt">) => void;
-  updateRequestStatus: (id: string, status: "approved" | "rejected") => void;
-
-  updateUserRole: (userId: string, role: "user" | "center" | "admin" | "super_admin") => void;
-  updateUserStatus: (userId: string, status: "active" | "suspended") => void;
-  updateUserInfo: (userId: string, data: { firstName?: string; lastName?: string; phone?: string; email?: string }) => void;
-
-  updateAdminCenter: (centerId: string, data: Partial<Omit<Center, "id">>) => void;
-  updateCenterStatus: (centerId: string, status: CenterStatus) => void;
-  deleteCenter: (centerId: string) => void;
-  syncUsers: () => void;
+export interface RegistrationRequest {
+  id: number;
+  centerName: string;
+  requesterId: number;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  details: string;
+  createdAt: string;
 }
 
-const useAdminStore = create<AdminState>()(
-  persist(
-    (set) => ({
-      adminCenters: centers,
-      centerStatuses: {},
-      registrationRequests: [
-        {
-          id: "req-1",
-          userId: "u-1",
-          name: "Bangkok Artisan Hub",
-          address: "123 Sukhumvit, Bangkok",
-          telephones: ["081-111-1111"],
-          email: "hello@bkkartisan.com",
-          lineId: "@bkkartisan",
-          facebook: "BangkokArtisanHub",
-          website: "www.bkkartisan.com",
-          providers: ["Somchai Jaidee", "Wipada S."],
-          communityLeaderFirstName: "Thongchai",
-          communityLeaderLastName: "Makmak",
-          communityLeaderTelephone: "082-222-2222",
-          status: "pending",
-          createdAt: new Date().toISOString(),
-        }
-      ],
-      users: [
-        { id: "u-super", firstName: "Super", lastName: "Admin", email: "super@admin.com", role: "super_admin", status: "active" },
-        { id: "u-admin", firstName: "Gen", lastName: "Admin", email: "admin@tg.com", role: "admin", status: "active" },
-        { id: "u-1", firstName: "Somchai", lastName: "User", email: "somchai@test.com", role: "user", status: "active" },
-      ],
+interface AdminState {
+  users: AdminUser[];
+  centers: AdminCenter[];
+  registrationRequests: RegistrationRequest[];
+  systemStats: {
+    totalUsers: number;
+    activeCenters: number;
+    revenue: number;
+    pendingApprovals: number;
+  };
 
-      addRegistrationRequest: (req) => {
-        const newReq: CenterRegistrationRequest = {
-          ...req,
-          id: crypto.randomUUID(),
-          status: "pending",
-          createdAt: new Date().toISOString(),
-        };
-        set((s) => ({ registrationRequests: [...s.registrationRequests, newReq] }));
-      },
+  fetchAdminData: () => Promise<void>;
 
-      updateRequestStatus: (id, status) => {
-        set((s) => ({
-          registrationRequests: s.registrationRequests.map((r) =>
-            r.id === id ? { ...r, status } : r
-          ),
-        }));
-      },
+  updateUserStatus: (id: string, status: "active" | "inactive") => Promise<void>;
+  updateUserRole: (id: string, role: string) => Promise<void>;
+  deleteUser: (id: string) => Promise<void>;
 
-      updateUserRole: (userId, role) => {
-        set((s) => ({
-          users: s.users.map((u) => (u.id === userId ? { ...u, role } : u)),
-        }));
-        try {
-          const stored = localStorage.getItem("tg_users");
-          if (stored) {
-            const lsUsers = JSON.parse(stored);
-            const idx = lsUsers.findIndex((u: { id: string }) => u.id === userId);
-            if (idx !== -1) { lsUsers[idx].role = role; localStorage.setItem("tg_users", JSON.stringify(lsUsers)); }
-          }
-        } catch (_e) {}
-      },
+  updateCenterStatus: (id: string, status: "pending" | "approved" | "rejected") => Promise<void>;
+  deleteCenter: (id: string) => Promise<void>;
+  
+  updateRegistrationRequestStatus: (id: number, status: "PENDING" | "APPROVED" | "REJECTED") => Promise<void>;
 
-      updateUserStatus: (userId, status) => {
-        set((s) => ({
-          users: s.users.map((u) => (u.id === userId ? { ...u, status } : u)),
-        }));
-        try {
-          const stored = localStorage.getItem("tg_users");
-          if (stored) {
-            const lsUsers = JSON.parse(stored);
-            const idx = lsUsers.findIndex((u: { id: string }) => u.id === userId);
-            if (idx !== -1) { lsUsers[idx].status = status; localStorage.setItem("tg_users", JSON.stringify(lsUsers)); }
-          }
-        } catch (_e) {}
-      },
+  getSystemLogs: () => Promise<any[]>;
+}
 
-      updateUserInfo: (userId, data) => {
-        set((s) => ({
-          users: s.users.map((u) => (u.id === userId ? { ...u, ...data } : u)),
-        }));
-        try {
-          const stored = localStorage.getItem("tg_users");
-          if (stored) {
-            const lsUsers = JSON.parse(stored);
-            const idx = lsUsers.findIndex((u: { id: string }) => u.id === userId);
-            if (idx !== -1) { Object.assign(lsUsers[idx], data); localStorage.setItem("tg_users", JSON.stringify(lsUsers)); }
-          }
-        } catch (_e) {}
-      },
+const useAdminStore = create<AdminState>((set) => ({
+  users: [],
+  centers: [],
+  registrationRequests: [],
+  systemStats: {
+    totalUsers: 0,
+    activeCenters: 0,
+    revenue: 0,
+    pendingApprovals: 0,
+  },
 
-      updateAdminCenter: (centerId, data) => {
-        set((s) => ({
-          adminCenters: s.adminCenters.map((c) =>
-            c.id === centerId ? { ...c, ...data } : c
-          ),
-        }));
-      },
+  fetchAdminData: async () => {
+    try {
+      const [usersRes, centersRes, requestsRes] = await Promise.allSettled([
+        apiClient.get(`/client/users/admin`),
+        apiClient.get(`/client/centers`),
+        apiClient.get(`/client/admin/registration-requests`)
+      ]);
 
-      updateCenterStatus: (centerId, status) => {
-        set((s) => ({
-          centerStatuses: { ...s.centerStatuses, [centerId]: status },
-        }));
-      },
+      const users = usersRes.status === "fulfilled" ? usersRes.value.data : [];
+      const centers = centersRes.status === "fulfilled" ? centersRes.value.data : [];
+      const requests = requestsRes.status === "fulfilled" ? requestsRes.value.data : [];
 
-      deleteCenter: (centerId) => {
-        set((s) => ({
-          adminCenters: s.adminCenters.filter((c) => c.id !== centerId),
-        }));
-      },
+      set({
+        users,
+        centers,
+        registrationRequests: requests,
+        systemStats: {
+          totalUsers: users.length,
+          activeCenters: centers.filter((c: any) => c.status === "approved").length,
+          revenue: Math.floor(Math.random() * 50000), 
+          pendingApprovals: requests.filter((r: any) => r.status === "PENDING").length,
+        },
+      });
+    } catch (error) {
+       console.error("Admin fetch error:", error);
+    }
+  },
 
-      syncUsers: () => {
-        try {
-          const stored = localStorage.getItem("tg_users");
-          if (stored) {
-            const lsUsers = JSON.parse(stored);
-            set({ users: lsUsers });
-          }
-        } catch (_e) {}
-      }
-    }),
-    { name: "tg_admin" }
-  )
-);
+  updateUserStatus: async (id, status) => {
+    try {
+      await apiClient.patch(`/client/users/admin/${id}`, { status });
+      set((state) => ({
+        users: state.users.map((u) => (u.id === id ? { ...u, status } : u)),
+      }));
+    } catch (e) { console.error(e); }
+  },
+
+  updateUserRole: async (id, role) => {
+    try {
+      await apiClient.patch(`/client/users/admin/role/${id}`, { role });
+      set((state) => ({
+        users: state.users.map((u) => (u.id === id ? { ...u, role } : u)),
+      }));
+    } catch (e) { console.error(e); }
+  },
+
+  deleteUser: async (id) => {
+    try {
+      await apiClient.delete(`/client/users/admin/${id}`);
+      set((state) => ({
+        users: state.users.filter((u) => u.id !== id),
+      }));
+    } catch(e) { console.error(e); }
+  },
+
+  updateCenterStatus: async (id, status) => {
+    try {
+       await apiClient.patch(`/client/centers/update/${id}`, { status });
+       set((state) => ({
+        centers: state.centers.map((c) => (c.id === id ? { ...c, status } : c)),
+       }));
+    } catch(e) { console.error(e); }
+  },
+
+  deleteCenter: async (id) => {
+    try {
+       await apiClient.delete(`/client/centers/delete/${id}`);
+       set((state) => ({
+          centers: state.centers.filter((c) => c.id !== id),
+       }));
+    } catch(e) { console.error(e); }
+  },
+
+  updateRegistrationRequestStatus: async (id, status) => {
+    try {
+       await apiClient.patch(`/client/admin/registration-requests/${id}/status`, { status });
+       set((state) => ({
+          registrationRequests: state.registrationRequests.map((r) => (r.id === id ? { ...r, status } : r)),
+       }));
+    } catch(e) { console.error(e); }
+  },
+
+  getSystemLogs: async () => {
+    try {
+      const res = await apiClient.get(`/client/admin/logs`);
+      return res.data;
+    } catch (error) { console.error("Logs fetch failed", error); throw error; }
+  },
+}));
 
 export default useAdminStore;
+
+
+

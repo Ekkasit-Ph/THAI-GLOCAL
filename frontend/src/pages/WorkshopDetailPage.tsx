@@ -531,7 +531,7 @@ export function WorkshopDetailPage() {
               <div className="p-5">
                 <h3 className="text-stone-900 mb-4 font-medium">Activity List</h3>
                 <div className="flex flex-col gap-3 mb-5">
-                  {activity.sessions.map((session) => {
+                  {activity.sessions.map((session: any) => {
                     const isFull = session.availableSpots === 0;
                     return (
                       <button

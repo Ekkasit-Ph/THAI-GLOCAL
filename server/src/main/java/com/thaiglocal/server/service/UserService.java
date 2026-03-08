@@ -226,4 +226,12 @@ public class UserService {
             System.err.println("Failed to send email: " + e.getMessage());
         }
     }
+
+    public void deleteUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        user.setIsActive(false);
+        user.setDeleteAt(LocalDateTime.now());
+        userRepository.save(user);
+    }
 }

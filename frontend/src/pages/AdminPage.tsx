@@ -41,7 +41,7 @@ function ToggleSwitch({
 // ─── AdminPage ───────────────────────────────────────────────────────────────
 export function AdminPage() {
   const user = useAuthStore((s) => s.user);
-  const syncUsers = useAdminStore((s) => s.syncUsers);
+  const syncUsers = useAdminStore((s: any) => s.syncUsers);
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"requests" | "centers" | "users" | "privileges">(
     "requests"
@@ -193,7 +193,7 @@ function RequestDetail({
   req: CenterRegistrationRequest;
   onBack: () => void;
 }) {
-  const updateStatus = useAdminStore((s) => s.updateRequestStatus);
+  const updateStatus = useAdminStore((s: any) => s.updateUserStatus);
   const { t } = useTranslation();
   const d = t.requests.detail;
 

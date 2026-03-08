@@ -10,7 +10,7 @@ interface WorkshopCardProps {
 
 export function WorkshopCard({ activity, compact = false }: WorkshopCardProps) {
   const center = centers.find((c) => c.id === activity.centerId);
-  const nextSession = activity.sessions.find((s) => s.availableSpots > 0);
+  const nextSession = activity.sessions.find((s: any) => s.availableSpots > 0);
   const isAvailable = !!nextSession;
 
   const categoryColors: Record<string, string> = {

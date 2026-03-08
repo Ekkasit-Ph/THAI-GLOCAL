@@ -39,7 +39,7 @@ export function CentersPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
                   <div className="absolute bottom-3 left-3 right-3">
                     <div className="flex flex-wrap gap-1.5">
-                      {center.tags.slice(0, 3).map((tag) => (
+                      {center.tags?.slice(0, 3).map((tag: any) => (
                         <span
                           key={tag}
                           className="px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-white"
@@ -127,7 +127,7 @@ export function CenterDetailPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none" />
         <div className="absolute bottom-0 left-0 right-0 max-w-6xl mx-auto px-4 pb-6">
           <div className="flex flex-wrap gap-1.5 mb-2">
-            {center.tags.map((tag) => (
+            {center.tags?.map((tag: any) => (
               <span
                 key={tag}
                 className="px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-white"

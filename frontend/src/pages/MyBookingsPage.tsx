@@ -40,7 +40,7 @@ export function MyBookingsPage() {
 
   const enriched = bookings.map((b) => {
     const activity = activities.find((a) => a.id === b.activityId);
-    const session = activity?.sessions.find((s) => s.id === b.sessionId);
+    const session = activity?.sessions.find((s: any) => s.id === (b as any).sessionId);
     const center = activity ? centers.find((c) => c.id === activity.centerId) : undefined;
     
     // Check cancellation restriction
@@ -59,7 +59,7 @@ export function MyBookingsPage() {
 
   const displayed =
     tab === "upcoming"
-      ? enriched.filter((b) => b.status !== "cancelled")
+      ? enriched.filter((b: any) => b.status !== "cancelled")
       : enriched;
 
   const confirmCancel = () => {
@@ -127,9 +127,9 @@ export function MyBookingsPage() {
           <div className="flex flex-col gap-4">
             {displayed.map((booking) => (
               <div
-                key={booking.id}
+                key={(booking as any).id}
                 className={`bg-white rounded-2xl border overflow-hidden transition-all ${
-                  booking.status === "cancelled" ? "opacity-60 border-stone-100" : "border-stone-100 hover:shadow-md"
+                  (booking as any).status === "cancelled" ? "opacity-60 border-stone-100" : "border-stone-100 hover:shadow-md"
                 }`}
               >
                 <div className="flex">
@@ -154,17 +154,17 @@ export function MyBookingsPage() {
                           {booking.activity?.title ?? "Unknown Activity"}
                         </p>
                         <p className="text-stone-400" style={{ fontSize: "0.75rem" }}>
-                          Booking #{booking.id}
+                          Booking #{(booking as any).id}
                         </p>
                       </div>
                       <span
                         className={`flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-medium flex-shrink-0 ${getStatusClass(
-                          booking.status
+                          (booking as any).status
                         )}`}
                       >
-                        {getStatusIcon(booking.status)}
-                        {booking.status === "cancellation_requested" ? "Cancellation Requested" : 
-                         booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                        {getStatusIcon((booking as any).status)}
+                        {(booking as any).status === "cancellation_requested" ? "Cancellation Requested" : 
+                         (booking as any).status.charAt(0).toUpperCase() + (booking as any).status.slice(1)}
                       </span>
                     </div>
 
@@ -190,7 +190,7 @@ export function MyBookingsPage() {
                       <div className="flex items-center gap-4" style={{ fontSize: "0.8rem" }}>
                         <span className="flex items-center gap-1 text-stone-500">
                           <Users className="w-3.5 h-3.5 text-amber-500" />
-                          {booking.participants} participant{booking.participants > 1 ? "s" : ""}
+                          {(booking as any).participants} participant{(booking as any).participants > 1 ? "s" : ""}
                         </span>
                         {booking.activity && (
                           <span className="flex items-center gap-1 text-stone-500">
@@ -203,15 +203,15 @@ export function MyBookingsPage() {
 
                     <div className="flex items-center justify-between">
                       <span className="text-amber-700 font-semibold" style={{ fontSize: "0.95rem" }}>
-                        ฿{booking.totalPrice.toLocaleString()}
+                        ฿{(booking as any).totalPrice.toLocaleString()}
                       </span>
-                      {booking.status !== "cancelled" && booking.status !== "cancellation_requested" && (
+                      {(booking as any).status !== "cancelled" && (booking as any).status !== "cancellation_requested" && (
                         <div className="flex items-center gap-2">
                           {!booking.canCancel && (
                             <span className="text-xs text-red-500 mr-2">Too late to cancel</span>
                           )}
                           <button
-                            onClick={() => setCancelId(booking.id)}
+                            onClick={() => setCancelId((booking as any).id)}
                             disabled={!booking.canCancel}
                             className={`flex items-center gap-1 transition-colors ${
                               booking.canCancel ? "text-red-400 hover:text-red-600" : "text-stone-300 cursor-not-allowed"
@@ -222,14 +222,14 @@ export function MyBookingsPage() {
                           </button>
                         </div>
                       )}
-                      {booking.status === "cancellation_requested" && booking.cancelRequestedBy === "center" && (
+                      {(booking as any).status === "cancellation_requested" && (booking as any).cancelRequestedBy === "center" && (
                          <div className="flex gap-2">
                            <button onClick={() => {
-                             useBookingStore.getState().approveCancellation(booking.id);
+                             useBookingStore.getState().approveCancellation((booking as any).id);
                            }} className="px-3 py-1 bg-red-50 text-red-600 rounded text-xs font-semibold">Approve Cancellation</button>
                          </div>
                       )}
-                      {booking.status === "cancellation_requested" && booking.cancelRequestedBy === "participant" && (
+                      {(booking as any).status === "cancellation_requested" && (booking as any).cancelRequestedBy === "participant" && (
                          <span className="text-xs text-stone-500 italic">Waiting for center approval...</span>
                       )}
                     </div>

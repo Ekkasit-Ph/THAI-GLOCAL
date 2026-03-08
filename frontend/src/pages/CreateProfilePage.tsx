@@ -10,30 +10,21 @@ export function CreateProfilePage() {
   const navigate = useNavigate();
   const { user, updateProfile } = useAuthStore();
 
-  const [username, setUsername] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [telephone, setTelephone] = useState("");
   const [address, setAddress] = useState("");
-  const [usernameError, setUsernameError] = useState("");
-
-  const USERNAME_REGEX = /^[a-zA-Z0-9_.]+$/;
 
   if (!user) return <Navigate to="/login" replace />;
 
   // If profile already completed, skip this page
-  if (user.firstName && user.username) {
+  if (user.firstName && user.lastName) {
     return <Navigate to="/profile" replace />;
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!USERNAME_REGEX.test(username.trim())) {
-      setUsernameError("Username can only contain letters, numbers, _ and .");
-      return;
-    }
     updateProfile({
-      username: username.trim(),
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       telephone: telephone.trim(),
@@ -58,34 +49,6 @@ export function CreateProfilePage() {
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-
-            {/* Username */}
-            <div>
-              <label htmlFor="cp-username" className={labelCls}>
-                Username
-              </label>
-              <div className="relative">
-                <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-                <input
-                  id="cp-username"
-                  type="text"
-                  required
-                  value={username}
-                  onChange={(e) => {
-                    setUsername(e.target.value);
-                    if (e.target.value && !USERNAME_REGEX.test(e.target.value))
-                      setUsernameError("Username can only contain letters, numbers, _ and .");
-                    else
-                      setUsernameError("");
-                  }}
-                  placeholder="e.g. somchai99"
-                  className={inputCls + (usernameError ? " border-red-400 focus:border-red-400 focus:ring-red-100" : "")}
-                />
-              </div>
-              {usernameError && (
-                <p className="mt-1.5 text-xs text-red-500">{usernameError}</p>
-              )}
-            </div>
 
             {/* First / Last name */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

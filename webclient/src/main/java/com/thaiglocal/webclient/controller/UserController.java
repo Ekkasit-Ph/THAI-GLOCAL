@@ -15,7 +15,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Controller
-@RequestMapping("/api")
+@RequestMapping("/client/users")
 @AllArgsConstructor
 public class UserController {
 
@@ -41,24 +41,24 @@ public class UserController {
             .map(ResponseEntity::ok);
     }
 
-    @GetMapping("/users/me")
+    @GetMapping("/me")
     public Mono<ResponseEntity<UserResponse>> getMyProfile() {
         return userService.getMyProfile()
             .map(ResponseEntity::ok);
     }
 
-    @PatchMapping("/users/me")
+    @PatchMapping("/me")
     public Mono<ResponseEntity<UserResponse>> updateUser(@Valid @RequestBody UserRequest request) {
         return userService.updateUser(request)
             .map(ResponseEntity::ok);
     }
 
-    @GetMapping("/admin/users")
+    @GetMapping("/admin")
     public Flux<UserResponse> getAllUsers() {
         return userService.getAllUsers();
     }
 
-    @PatchMapping("/admin/users/{id}")
+    @PatchMapping("/admin/{id}")
     public Mono<ResponseEntity<UserResponse>> adminUpdateUserByUserId(
         @PathVariable("id") Long id,
         @Valid @RequestBody UserRequest request) {
@@ -66,7 +66,7 @@ public class UserController {
             .map(ResponseEntity::ok);
     }
 
-    @PatchMapping("/admin/users/role/{id}")
+    @PatchMapping("/admin/role/{id}")
     public Mono<ResponseEntity<UserResponse>> grantAdminRole(
         @PathVariable("id") Long id,
         @Valid @RequestBody RoleRequest request) {
@@ -78,5 +78,11 @@ public class UserController {
     public Mono<ResponseEntity<String>> forgetPassword(@Valid @RequestBody ForgetPasswordRequest request) {
         return userService.forgetPassword(request)
             .map(ResponseEntity::ok);
+    }
+
+    @DeleteMapping("/admin/{id}")
+    public Mono<ResponseEntity<Void>> deleteUser(@PathVariable Long id) {
+        return userService.deleteUser(id)
+                .thenReturn(ResponseEntity.noContent().build());
     }
 }

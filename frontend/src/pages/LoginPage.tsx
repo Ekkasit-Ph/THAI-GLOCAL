@@ -21,7 +21,7 @@ export function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      await login(email.trim(), password);
+      await login({ email: email.trim(), password });
       navigate(from, { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed.");

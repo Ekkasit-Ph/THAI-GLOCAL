@@ -302,7 +302,7 @@ function CenterWorkshopsTab({ centerId }: { centerId: string }) {
     if (editing) {
       updateWorkshop(editing.id, form);
     } else {
-      createWorkshop({ ...form, centerId, ownerId: "admin", images: [] });
+      createWorkshop(centerId, { ...form, centerId, ownerId: "admin", images: [] } as any);
     }
     handleCancel();
   };
@@ -449,7 +449,7 @@ function CenterBookingsTab({ centerId }: { centerId: string }) {
   const allWorkshops = useMyCenterStore((s) => s.workshops);
   const workshops = useMemo(() => allWorkshops.filter((w) => w.centerId === centerId), [allWorkshops, centerId]);
   const sessions = useMyCenterStore((s) => s.sessions);
-  const bookings = useMyCenterStore((s) => s.bookings);
+  const bookings = useMyCenterStore((s: any) => s.myBookings || s.bookings);
   const updateBookingStatus = useMyCenterStore((s) => s.updateBookingStatus);
 
   const [selectedWorkshop, setSelectedWorkshop] = useState<string>("");
@@ -489,7 +489,7 @@ function CenterBookingsTab({ centerId }: { centerId: string }) {
           </div>
         ) : (
           workshopSessions.map((session) => {
-            const sessionBookings = bookings.filter((b) => b.sessionId === session.id);
+            const sessionBookings = bookings?.filter((b: any) => b.sessionId === session.id) || [];
             const isOpen = expandedSession === session.id;
             return (
               <div key={session.id} className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
@@ -521,7 +521,7 @@ function CenterBookingsTab({ centerId }: { centerId: string }) {
                           </tr>
                         </thead>
                         <tbody>
-                          {sessionBookings.map((b) => (
+                          {sessionBookings.map((b: any) => (
                             <tr key={b.id} className="border-b border-stone-100 hover:bg-stone-50 transition">
                               <td className="p-3 font-medium text-stone-900">{b.firstName} {b.lastName}</td>
                               <td className="p-3 text-stone-600">{b.telephone}</td>

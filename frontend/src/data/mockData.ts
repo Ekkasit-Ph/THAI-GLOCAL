@@ -1,54 +1,10 @@
-export interface Center {
-  id: string;
-  name: string;
-  nameTh: string;
-  location: string;
-  province: string;
-  description: string;
-  images: string[];
-  totalActivities: number;
-  tags: string[];
-}
+export interface Center { [key: string]: any; }
 
-export interface Activity {
-  id: string;
-  centerId: string;
-  title: string;
-  titleTh: string;
-  category: string;
-  description: string;
-  images: string[];
-  duration: string;
-  maxParticipants: number;
-  price: number;
-  sessions: Session[];
-}
+export interface Activity { [key: string]: any; }
 
-export interface Session {
-  name?: string;
-  description?: string;
-  id: string;
-  activityId: string;
-  date: string;
-  time: string;
-  availableSpots: number;
-  totalSpots: number;
-}
+export interface Session { [key: string]: any; }
 
-export interface Booking {
-  id: string;
-  activityId: string;
-  sessionId: string;
-  name: string;
-  email: string;
-  phone: string;
-  participants: number;
-  totalPrice: number;
-  status: "confirmed" | "pending" | "cancelled" | "cancellation_requested";
-  cancelRequestedBy?: "participant" | "center";
-  createdAt: string;
-  notes?: string;
-}
+export interface Booking { [key: string]: any; }
 
 export const centers: Center[] = [
   {
@@ -265,3 +221,6 @@ export const provinces = [
   "Surat Thani",
   "Ayutthaya",
 ];
+
+
+

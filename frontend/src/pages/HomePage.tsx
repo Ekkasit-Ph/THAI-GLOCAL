@@ -188,7 +188,7 @@ export function HomePage() {
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {center.tags.map((tag) => (
+                      {center.tags?.map((tag: any) => (
                         <span key={tag} className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full" style={{ fontSize: "0.65rem" }}>
                           {tag}
                         </span>

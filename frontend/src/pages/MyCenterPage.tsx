@@ -596,15 +596,15 @@ export function MyCenterPage() {
 
   if (!user) return <Navigate to="/login" state={{ from: "/my-center" }} replace />;
 
-  const centers = store.getCentersByOwner(user.id);
-  const activeCenter = activeCenterId ? centers.find((c) => c.id === activeCenterId) : null;
-  const workshops = activeCenter ? store.getWorkshopsByCenter(activeCenter.id) : [];
+  const centers = ((store as any).getCentersByOwner ? (store as any).getCentersByOwner(user.id) : []);
+  const activeCenter = activeCenterId ? centers.find((c: any) => c.id === activeCenterId) : null;
+  const workshops = activeCenter ? (store as any).getWorkshopsByCenter(activeCenter.id) : [];
 
   const saveCenter = (data: typeof EMPTY_CENTER) => {
     if (drawer === "editCenter" && activeCenter) {
       store.updateCenter(activeCenter.id, data);
     } else {
-      const newCenter = store.createCenter({ ...data, ownerId: user.id });
+      const newCenter = (store as any).createCenter({ ...data, ownerId: user.id });
       setActiveCenterId(newCenter.id);
     }
     setDrawer("none");
@@ -623,12 +623,12 @@ export function MyCenterPage() {
     if (!activeCenter) return;
     if (editingWorkshop) {
       store.updateWorkshop(editingWorkshop.id, data);
-      store.generateWeeklySessions(editingWorkshop.id);
+      (store as any).generateWeeklySessions(editingWorkshop.id);
       setEditingWorkshop(null);
     } else {
-      const newWorkshop = store.createWorkshop({ ...data, centerId: activeCenter.id, ownerId: user.id });
-      if (newWorkshop.recurringDays && newWorkshop.recurringDays.length > 0) {
-        store.generateWeeklySessions(newWorkshop.id);
+      const newWorkshop = (store as any).createWorkshop({ ...data, centerId: activeCenter.id, ownerId: user.id });
+      if ((newWorkshop as any).recurringDays && newWorkshop.recurringDays.length > 0) {
+        (store as any).generateWeeklySessions((newWorkshop as any).id);
       }
     }
     setPendingWorkshopUpdate(null);
@@ -687,7 +687,7 @@ export function MyCenterPage() {
         {/* ── Centers List Dashboard ─────────────────────────────────── */}
         {!activeCenter && drawer === "none" && centers.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {centers.map(c => (
+            {centers.map((c: any) => (
               <div 
                 key={c.id} 
                 onClick={() => setActiveCenterId(c.id)}
@@ -785,7 +785,7 @@ export function MyCenterPage() {
                   <p>{activeCenter.description}</p>
                   {activeCenter.images && activeCenter.images.length > 0 && (
                     <div className="flex gap-2 overflow-x-auto">
-                      {activeCenter.images.map((img, i) => (
+                      {activeCenter.images.map((img: any, i: any) => (
                         <img key={i} src={img} alt={`${activeCenter.name} preview`} className="w-24 h-24 object-cover rounded-xl border border-stone-100 shrink-0" />
                       ))}
                     </div>
@@ -865,7 +865,7 @@ export function MyCenterPage() {
                 )}
 
                 <div className="flex flex-col gap-3">
-                  {workshops.map((ws) => (
+                  {workshops.map((ws: any) => (
                     <div key={ws.id}>
                       {confirmDeleteId === ws.id ? (
                         <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-center justify-between gap-3">
