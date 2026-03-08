@@ -6,13 +6,17 @@ import org.springframework.stereotype.Service;
 
 import com.thaiglocal.server.dto.request.CenterRequest;
 import com.thaiglocal.server.dto.response.CenterResponse;
+import com.thaiglocal.server.dto.response.StaffResponse;
 import com.thaiglocal.server.exception.InvalidRoleException;
 import com.thaiglocal.server.exception.NotFoundException;
 import com.thaiglocal.server.model.Center;
+import com.thaiglocal.server.model.CenterBelongUser;
 import com.thaiglocal.server.model.CenterImage;
 import com.thaiglocal.server.model.Telephone;
 import com.thaiglocal.server.model.User;
+import com.thaiglocal.server.model.enums.PositionName;
 import com.thaiglocal.server.model.enums.RoleName;
+import com.thaiglocal.server.repository.CenterBelongUserRepository;
 import com.thaiglocal.server.repository.CenterRepository;
 import com.thaiglocal.server.repository.UserRepository;
 
@@ -22,14 +26,17 @@ import jakarta.transaction.Transactional;
 public class CenterService {
     private final CenterRepository centerRepository;
     private final UserRepository userRepository;
+    private final CenterBelongUserRepository centerBelongUserRepository;
 
     public CenterService(
         CenterRepository centerRepository,
-        UserRepository userRepository
+        UserRepository userRepository,
+        CenterBelongUserRepository centerBelongUserRepository
     )
     {
         this.centerRepository = centerRepository;
         this.userRepository = userRepository;
+        this.centerBelongUserRepository = centerBelongUserRepository;
     }
 
     private CenterResponse mapToCenterResponse(Center center) {
@@ -38,6 +45,20 @@ public class CenterService {
             .toList();
         List<String> telephoneNumbers = center.getTelephones().stream()
             .map(Telephone::getTelephoneNumber)
+            .toList();
+
+        List<StaffResponse> staffResponses = center.getCenterBelongUsers().stream()
+            .map(cbu -> {
+                User user = cbu.getUser();
+                return StaffResponse.builder()
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .phoneNumber(user.getTelephone())
+                    .position(cbu.getPosition())
+                    .build();
+            })
             .toList();
 
         return CenterResponse.builder()
@@ -59,6 +80,7 @@ public class CenterService {
                 .leaderTelephone(center.getLeaderTelephone())
                 .centerImages(imageUrls)
                 .telephones(telephoneNumbers)
+                .staffResponses(staffResponses)
                 .build();
     }
 
@@ -101,7 +123,12 @@ public class CenterService {
     }
 
     @Transactional
-    public void createCenter(CenterRequest request){
+    public void createCenter(CenterRequest request, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        user.setRole(RoleName.CENTER_ADMIN);
+        userRepository.save(user);
+
         Center center = Center.builder()
                 .centerName(request.getCenterName())
                 .description(request.getDescription())
@@ -139,6 +166,67 @@ public class CenterService {
         }
 
         centerRepository.save(center);
+
+        CenterBelongUser centerBelongUser = CenterBelongUser.builder()
+                .position(PositionName.CENTER_ADMIN)
+                .build();
+
+        center.addCenterBelongUser(centerBelongUser);
+        user.addCenterBelongUser(centerBelongUser);
+        
+        centerBelongUserRepository.save(centerBelongUser);
+    }
+
+    public void addCenterAdmin(Long centerId, Long userId) {
+        Center center = centerRepository.findById(centerId)
+                .orElseThrow(() -> new NotFoundException("Center not found with id: " + centerId));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        boolean alreadyExists = center.getCenterBelongUsers().stream()
+                .anyMatch(cbu -> cbu.getUser().getUserId().equals(userId));
+
+        if (alreadyExists) {
+            throw new RuntimeException("User with id: " + userId + " is already associated with center id: " + centerId);
+        }
+
+        user.setRole(RoleName.CENTER_ADMIN);
+        userRepository.save(user);
+
+        CenterBelongUser centerBelongUser = CenterBelongUser.builder()
+                .position(PositionName.CENTER_ADMIN)
+                .build();
+
+        center.addCenterBelongUser(centerBelongUser);
+        user.addCenterBelongUser(centerBelongUser);
+
+        centerBelongUserRepository.save(centerBelongUser);
+    }
+
+    public void addCenterStaff(Long centerId, Long userId) {
+        Center center = centerRepository.findById(centerId)
+                .orElseThrow(() -> new NotFoundException("Center not found with id: " + centerId));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        boolean alreadyExists = center.getCenterBelongUsers().stream()
+            .anyMatch(cbu -> cbu.getUser().getUserId().equals(userId));
+
+        if (alreadyExists) {
+            throw new RuntimeException("User with id: " + userId + " is already associated with center id: " + centerId);
+        }
+
+        user.setRole(RoleName.CENTER_ADMIN);
+        userRepository.save(user);
+
+        CenterBelongUser centerBelongUser = CenterBelongUser.builder()
+                .position(PositionName.CENTER_STAFF)
+                .build();
+
+        center.addCenterBelongUser(centerBelongUser);
+        user.addCenterBelongUser(centerBelongUser);
+
+        centerBelongUserRepository.save(centerBelongUser);
     }
 
     @Transactional

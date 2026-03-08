@@ -34,4 +34,5 @@ public class CenterResponse {
 
     private List<String> centerImages;
     private List<String> telephones;
+    private List<StaffResponse> staffResponses;
 }
