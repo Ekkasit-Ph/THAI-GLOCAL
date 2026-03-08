@@ -12,6 +12,6 @@ public interface ActivityRegisterRepository extends JpaRepository<ActivityRegist
 
     List<ActivityRegister> findByActivity_ActivityId(Long activityId);
 
-    List<ActivityRegister> findByUser_UserId(String userId);
+    List<ActivityRegister> findByUser_UserId(Long userId);
     
 }

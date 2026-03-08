@@ -57,11 +57,27 @@ public class CenterController {
         return ResponseEntity.ok(responses);
     }
 
-    // Method: POST /api/centers/create
-    @PostMapping("/create")
-    public ResponseEntity<Void> createCenter(@Valid @RequestBody CenterRequest request) {
-        centerService.createCenter(request);
+    // Method: POST /api/centers/create/user/{userId}
+    @PostMapping("/create/user/{userId}")
+    public ResponseEntity<Void> createCenter(
+            @PathVariable Long userId,
+            @Valid @RequestBody CenterRequest request) {
+        centerService.createCenter(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).build(); // HTTP 201 Created
+    }
+
+    // Method: POST /api/centers/{centerId}/add-admin/{userId}
+    @PostMapping("/{centerId}/add-admin/{userId}")
+    public ResponseEntity<Void> addCenterAdmin(@PathVariable Long centerId, @PathVariable Long userId) {
+        centerService.addCenterAdmin(centerId, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    // Method: POST /api/centers/{centerId}/add-staff/{userId}
+    @PostMapping("/{centerId}/add-staff/{userId}")
+    public ResponseEntity<Void> addCenterStaff(@PathVariable Long centerId, @PathVariable Long userId) {
+        centerService.addCenterStaff(centerId, userId);
+        return ResponseEntity.ok().build();
     }
 
     // Method: PATCH /api/centers/update/{centerId}
@@ -80,6 +96,4 @@ public class CenterController {
         centerService.deleteCenter(centerId);
         return ResponseEntity.noContent().build(); // HTTP 204 No Content
     }
-
-
 }
