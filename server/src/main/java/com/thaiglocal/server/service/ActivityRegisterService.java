@@ -81,7 +81,7 @@ public class ActivityRegisterService {
         int maxCapacity = activity.getRegisterCapacity() != null ? activity.getRegisterCapacity() : 0;
 
         int currentRegisteredCount = activity.getActivityRegisters().stream()
-                .filter(reg -> reg.getStatus() != ActivityRegisterStatus.CANCELED)
+                .filter(reg -> reg.getStatus() != ActivityRegisterStatus.CANCELLED)
                 .mapToInt(reg -> reg.getNumberOfRegister() != null ? reg.getNumberOfRegister() : 0)
                 .sum();
 
@@ -118,7 +118,7 @@ public class ActivityRegisterService {
         ActivityRegister activityRegister = activityRegisterRepository.findById(activityRegisterId)
                 .orElseThrow(() -> new RuntimeException("Activity register not found with id: " + activityRegisterId));
     
-        activityRegister.setStatus(ActivityRegisterStatus.CANCELED);
+        activityRegister.setStatus(ActivityRegisterStatus.CANCELLED);
         activityRegisterRepository.save(activityRegister);
     }
 
