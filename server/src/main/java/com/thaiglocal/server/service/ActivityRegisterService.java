@@ -52,7 +52,7 @@ public class ActivityRegisterService {
         return mapToActivityRegisterResponseList(activitieRegisters);
     }
 
-    public List<ActivityRegisterReponse> getActivityRegistersByUserId(String userId) {
+    public List<ActivityRegisterReponse> getActivityRegistersByUserId(Long userId) {
         List<ActivityRegister> activitieRegisters = activityRegisterRepository.findByUser_UserId(userId);
         return mapToActivityRegisterResponseList(activitieRegisters);
     }
@@ -76,6 +76,20 @@ public class ActivityRegisterService {
 
         Activity activity = activityRepository.findById(activityId)
                 .orElseThrow(() -> new RuntimeException("Activity not found with id: " + activityId));
+
+        int requestCount = request.getNumberOfRegister() != null ? request.getNumberOfRegister() : 0;
+        int maxCapacity = activity.getRegisterCapacity() != null ? activity.getRegisterCapacity() : 0;
+
+        int currentRegisteredCount = activity.getActivityRegisters().stream()
+                .filter(reg -> reg.getStatus() != ActivityRegisterStatus.CANCELED)
+                .mapToInt(reg -> reg.getNumberOfRegister() != null ? reg.getNumberOfRegister() : 0)
+                .sum();
+
+        int availableCapacity = maxCapacity - currentRegisteredCount;
+
+        if (requestCount > availableCapacity) {
+            throw new RuntimeException("Number of register exceeds available capacity");
+        }
 
         ActivityRegister activityRegister = ActivityRegister.builder()
                 .numberOfRegister(request.getNumberOfRegister())
