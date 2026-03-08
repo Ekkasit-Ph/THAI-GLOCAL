@@ -42,4 +42,9 @@ public class WebClientConfig {
             })
             .build();
     }
+
+    @Bean
+    public WebClient.Builder webClientBuilder() {
+        return WebClient.builder();
+    }
 }
