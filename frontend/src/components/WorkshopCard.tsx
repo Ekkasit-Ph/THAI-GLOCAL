@@ -1,7 +1,8 @@
 import { Link } from "react-router";
 import { Clock, Users, Star, MapPin } from "lucide-react";
-import { Activity, centers } from "../data/mockData";
+import { Activity } from "../data/mockData";
 import { ImageCarousel } from "./ImageCarousel";
+import useDataStore from "../store/dataStore";
 
 interface WorkshopCardProps {
   activity: Activity;
@@ -9,9 +10,11 @@ interface WorkshopCardProps {
 }
 
 export function WorkshopCard({ activity, compact = false }: WorkshopCardProps) {
+  const centers = useDataStore((s) => s.centers);
   const center = centers.find((c) => c.id === activity.centerId);
-  const nextSession = activity.sessions.find((s: any) => s.availableSpots > 0);
-  const isAvailable = !!nextSession;
+  const sessions: any[] = activity.sessions ?? [];
+  const nextSession = sessions.find((s: any) => s.availableSpots > 0);
+  const isAvailable = sessions.length === 0 || !!nextSession;
 
   const categoryColors: Record<string, string> = {
     Crafts: "bg-amber-100 text-amber-700",

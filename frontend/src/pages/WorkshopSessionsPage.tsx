@@ -269,9 +269,10 @@ export function WorkshopSessionsPage() {
 
   if (!user) return <Navigate to="/login" state={{ from: `/my-center/workshop/${workshopId}` }} replace />;
 
-  const workshop = workshopId ? (store as any).getWorkshopById(workshopId) : undefined;
+  const workshop = workshopId ? store.myWorkshops.find((w: any) => String(w.id) === String(workshopId)) : undefined;
+  const workshopIsOwned = workshop ? store.myCenters.some((c: any) => c.id === (workshop as any).centerId) : false;
 
-  if (!workshop || workshop.ownerId !== user.id) {
+  if (!workshop || !workshopIsOwned) {
     return (
       <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center gap-4 px-4">
         <AlertCircle className="w-12 h-12 text-stone-300" />
@@ -286,25 +287,23 @@ export function WorkshopSessionsPage() {
     );
   }
 
-  const sessions = (store as any).getSessionsByWorkshop((workshop as any).id);
+  const sessions = store.mySessions.filter((s: any) => String(s.workshopId) === String((workshop as any).id));
 
   const saveSession = (data: typeof EMPTY_SESSION) => {
     if (editingSession) {
       store.updateSession(editingSession.id, data);
       setEditingSession(null);
     } else {
-      (store as any).createSession({
+      store.createSession((workshop as any).id, {
         ...data,
-        workshopId: workshop.id,
-        centerId: workshop.centerId,
-        ownerId: user.id,
+        price: (workshop as any).price,
       });
     }
     setPanel("none");
   };
 
   const handleDelete = (id: string) => {
-    const bookings = (store as any).getBookingsBySession(id);
+    const bookings = store.myBookings.filter((b: any) => String(b.sessionId) === String(id));
     const hasActiveBookings = bookings.some((b: any) => ["pending", "approved", "confirmed"].includes(b.status));
     if (hasActiveBookings) {
       setErrorMessage("Error: Activity cannot be deleted because there are active bookings.\n\nTo delete an activity with existing participants, the organizer must first cancel/remove all bookings. Deletion is only permitted once all participants have approved the cancellation.");
@@ -315,7 +314,7 @@ export function WorkshopSessionsPage() {
   };
 
   if (activeSession) {
-    const sessionBookings = (store as any).getBookingsBySession(activeSession.id);
+    const sessionBookings = store.myBookings.filter((b: any) => String(b.sessionId) === String(activeSession.id));
     const confirmedCount = sessionBookings.filter((b: any) => b.status === "confirmed").length;
 
     return (
@@ -374,7 +373,7 @@ export function WorkshopSessionsPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-stone-900 border-l-4 border-amber-500 pl-3">Booking Approval & Management</h2>
               <button 
-                onClick={() => (store as any).createMockBooking(activeSession.id, workshop.id)}
+                onClick={() => alert("Test booking feature coming soon.")}
                 className="text-xs px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg flex items-center gap-1 transition-colors font-medium shadow-sm"
                 title="Only for testing"
               >
@@ -616,7 +615,7 @@ export function WorkshopSessionsPage() {
             </div>
           ) : (
             upcoming.map((s: any) => {
-              const hasBookings = (store as any).getBookingsBySession(s.id).length > 0;
+              const hasBookings = store.myBookings.filter((b: any) => String(b.sessionId) === String(s.id)).length > 0;
               return (
                 <div key={s.id}>
                   {confirmDeleteId === s.id ? (

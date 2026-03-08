@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, Navigate } from "react-router";
 import {
   Calendar,
@@ -12,66 +12,94 @@ import {
 } from "lucide-react";
 import useBookingStore from "../store/bookingStore";
 import useAuthStore from "../store/authStore";
-import { activities, centers, Booking } from "../data/mockData";
+import useDataStore from "../store/dataStore";
 
-function getStatusIcon(status: Booking["status"]) {
+function normalizeStatus(s: any): string {
+  if (!s) return "pending";
+  return String(s).toLowerCase();
+}
+
+function getStatusIcon(status: string) {
   if (status === "confirmed") return <CheckCircle2 className="w-4 h-4 text-green-500" />;
   if (status === "cancelled") return <XCircle className="w-4 h-4 text-red-400" />;
-  if (status === "cancellation_requested") return <AlertCircle className="w-4 h-4 text-orange-500" />;
+  if (status === "completed") return <CheckCircle2 className="w-4 h-4 text-blue-500" />;
   return <AlertCircle className="w-4 h-4 text-amber-400" />;
 }
 
-function getStatusClass(status: Booking["status"]) {
+function getStatusClass(status: string) {
   if (status === "confirmed") return "bg-green-50 text-green-700 border-green-200";
   if (status === "cancelled") return "bg-red-50 text-red-600 border-red-200";
-  if (status === "cancellation_requested") return "bg-orange-50 text-orange-700 border-orange-200";
+  if (status === "completed") return "bg-blue-50 text-blue-700 border-blue-200";
   return "bg-amber-50 text-amber-700 border-amber-200";
+}
+
+function parseDate(startDate: string | null | undefined): { date: string; time: string } {
+  if (!startDate) return { date: "", time: "" };
+  const s = String(startDate);
+  return { date: s.slice(0, 10), time: s.slice(11, 16) };
 }
 
 export function MyBookingsPage() {
   const user = useAuthStore((s) => s.user);
   const bookings = useBookingStore((s) => s.bookings);
+  const fetchUserBookings = useBookingStore((s) => s.fetchUserBookings);
   const cancelBooking = useBookingStore((s) => s.cancelBooking);
   const requestCancellation = useBookingStore((s) => s.requestCancelBooking);
+  const { workshops, centers, fetchData } = useDataStore();
   const [tab, setTab] = useState<"upcoming" | "all">("upcoming");
   const [cancelId, setCancelId] = useState<string | null>(null);
 
   if (!user) return <Navigate to="/login" state={{ from: "/my-bookings" }} replace />;
 
-  const enriched = bookings.map((b) => {
-    const activity = activities.find((a) => a.id === b.activityId);
-    const session = activity?.sessions.find((s: any) => s.id === (b as any).sessionId);
-    const center = activity ? centers.find((c) => c.id === activity.centerId) : undefined;
-    
-    // Check cancellation restriction
-    const currentDate = new Date('2026-03-07');
-    let canCancel = false;
-    let daysUntil = 0;
-    if (session) {
-      const sessionDate = new Date(session.date);
-      const timeDiff = sessionDate.getTime() - currentDate.getTime();
-      daysUntil = Math.ceil(timeDiff / (1000 * 3600 * 24));
-      canCancel = daysUntil >= 3;
-    }
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    fetchUserBookings(String(user.id));
+    if (workshops.length === 0) fetchData();
+  }, [user.id]);
 
-    return { ...b, activity, session, center, canCancel, daysUntil };
-  });
+  const enriched = bookings
+    .filter((b) => b != null)
+    .map((b) => {
+      const status = normalizeStatus(b.status);
+      const activityId = String(b.activityId ?? "");
+      const workshop = workshops.find((w) => String(w.id) === activityId);
+      const center = workshop ? centers.find((c) => c.id === workshop.centerId) : undefined;
+      const { date, time } = parseDate(b.startDate);
+
+      const currentDate = new Date();
+      let canCancel = false;
+      let daysUntil = 0;
+      if (date) {
+        const sessionDate = new Date(date);
+        const timeDiff = sessionDate.getTime() - currentDate.getTime();
+        daysUntil = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        canCancel = daysUntil >= 3;
+      }
+
+      return {
+        id: b.id,
+        activityName: b.activityName || workshop?.title || "Unknown Activity",
+        images: workshop?.images ?? [],
+        duration: workshop?.duration ?? "",
+        date,
+        time,
+        center,
+        status,
+        participants: b.participants ?? 1,
+        totalPrice: b.totalPrice ?? 0,
+        canCancel,
+        daysUntil,
+      };
+    });
 
   const displayed =
     tab === "upcoming"
-      ? enriched.filter((b: any) => b.status !== "cancelled")
+      ? enriched.filter((b) => b.status !== "cancelled" && b.status !== "completed")
       : enriched;
 
   const confirmCancel = () => {
     if (cancelId) {
-      const booking = bookings.find((b) => b.id === cancelId);
-      if (booking?.status === "confirmed") {
-        // Requires mutual approval
-        requestCancellation(cancelId, "participant");
-        alert("Cancellation requested. Waiting for center approval.");
-      } else {
-        cancelBooking(cancelId);
-      }
+      cancelBooking(cancelId);
       setCancelId(null);
     }
   };
@@ -127,18 +155,18 @@ export function MyBookingsPage() {
           <div className="flex flex-col gap-4">
             {displayed.map((booking) => (
               <div
-                key={(booking as any).id}
+                key={booking.id}
                 className={`bg-white rounded-2xl border overflow-hidden transition-all ${
-                  (booking as any).status === "cancelled" ? "opacity-60 border-stone-100" : "border-stone-100 hover:shadow-md"
+                  booking.status === "cancelled" ? "opacity-60 border-stone-100" : "border-stone-100 hover:shadow-md"
                 }`}
               >
                 <div className="flex">
                   {/* Image */}
-                  {booking.activity && (
-                    <div className="w-28 sm:w-36 flex-shrink-0">
+                  {booking.images.length > 0 && (
+                    <div className="w-28 sm:w-36 shrink-0">
                       <img
-                        src={booking.activity.images?.[0] || ""}
-                        alt={booking.activity.title}
+                        src={booking.images[0]}
+                        alt={booking.activityName}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -151,34 +179,33 @@ export function MyBookingsPage() {
                           className="text-stone-900 font-semibold truncate"
                           style={{ fontSize: "0.95rem" }}
                         >
-                          {booking.activity?.title ?? "Unknown Activity"}
+                          {booking.activityName}
                         </p>
                         <p className="text-stone-400" style={{ fontSize: "0.75rem" }}>
-                          Booking #{(booking as any).id}
+                          Booking #{booking.id}
                         </p>
                       </div>
                       <span
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-medium flex-shrink-0 ${getStatusClass(
-                          (booking as any).status
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-medium shrink-0 ${getStatusClass(
+                          booking.status
                         )}`}
                       >
-                        {getStatusIcon((booking as any).status)}
-                        {(booking as any).status === "cancellation_requested" ? "Cancellation Requested" : 
-                         (booking as any).status.charAt(0).toUpperCase() + (booking as any).status.slice(1)}
+                        {getStatusIcon(booking.status)}
+                        {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                       </span>
                     </div>
 
                     <div className="flex flex-col gap-1 mb-3">
-                      {booking.session && (
+                      {booking.date && (
                         <div className="flex items-center gap-1.5 text-stone-500" style={{ fontSize: "0.8rem" }}>
                           <Calendar className="w-3.5 h-3.5 text-amber-500" />
-                          {new Date(booking.session.date).toLocaleDateString("en-US", {
+                          {new Date(booking.date).toLocaleDateString("en-US", {
                             weekday: "short",
                             month: "short",
                             day: "numeric",
                             year: "numeric",
-                          })}{" "}
-                          · {booking.session.time}
+                          })}
+                          {booking.time && ` · ${booking.time}`}
                         </div>
                       )}
                       {booking.center && (
@@ -190,12 +217,12 @@ export function MyBookingsPage() {
                       <div className="flex items-center gap-4" style={{ fontSize: "0.8rem" }}>
                         <span className="flex items-center gap-1 text-stone-500">
                           <Users className="w-3.5 h-3.5 text-amber-500" />
-                          {(booking as any).participants} participant{(booking as any).participants > 1 ? "s" : ""}
+                          {booking.participants} participant{booking.participants > 1 ? "s" : ""}
                         </span>
-                        {booking.activity && (
+                        {booking.duration && (
                           <span className="flex items-center gap-1 text-stone-500">
                             <Clock className="w-3.5 h-3.5 text-amber-500" />
-                            {booking.activity.duration}
+                            {booking.duration}
                           </span>
                         )}
                       </div>
@@ -203,15 +230,15 @@ export function MyBookingsPage() {
 
                     <div className="flex items-center justify-between">
                       <span className="text-amber-700 font-semibold" style={{ fontSize: "0.95rem" }}>
-                        ฿{(booking as any).totalPrice.toLocaleString()}
+                        ฿{booking.totalPrice.toLocaleString()}
                       </span>
-                      {(booking as any).status !== "cancelled" && (booking as any).status !== "cancellation_requested" && (
+                      {booking.status !== "cancelled" && booking.status !== "completed" && (
                         <div className="flex items-center gap-2">
                           {!booking.canCancel && (
                             <span className="text-xs text-red-500 mr-2">Too late to cancel</span>
                           )}
                           <button
-                            onClick={() => setCancelId((booking as any).id)}
+                            onClick={() => setCancelId(booking.id)}
                             disabled={!booking.canCancel}
                             className={`flex items-center gap-1 transition-colors ${
                               booking.canCancel ? "text-red-400 hover:text-red-600" : "text-stone-300 cursor-not-allowed"
@@ -221,16 +248,6 @@ export function MyBookingsPage() {
                             <Trash2 className="w-3.5 h-3.5" /> Cancel
                           </button>
                         </div>
-                      )}
-                      {(booking as any).status === "cancellation_requested" && (booking as any).cancelRequestedBy === "center" && (
-                         <div className="flex gap-2">
-                           <button onClick={() => {
-                             useBookingStore.getState().approveCancelBooking((booking as any).id);
-                           }} className="px-3 py-1 bg-red-50 text-red-600 rounded text-xs font-semibold">Approve Cancellation</button>
-                         </div>
-                      )}
-                      {(booking as any).status === "cancellation_requested" && (booking as any).cancelRequestedBy === "participant" && (
-                         <span className="text-xs text-stone-500 italic">Waiting for center approval...</span>
                       )}
                     </div>
                   </div>

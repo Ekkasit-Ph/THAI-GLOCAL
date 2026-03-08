@@ -1,12 +1,19 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router";
 import { Search, SlidersHorizontal, X } from "lucide-react";
-import { activities, categories, provinces, centers } from "../data/mockData";
+import useDataStore from "../store/dataStore";
 import { WorkshopCard } from "../components/WorkshopCard";
 
 export function WorkshopsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
+  const { activities, centers, fetchData } = useDataStore();
+
+  useEffect(() => { fetchData(); }, []);
+
+  // Build categories and provinces from real data
+  const categories = useMemo(() => ["All", ...Array.from(new Set(activities.map((a) => a.category).filter(Boolean)))], [activities]);
+  const provinces = useMemo(() => ["All Provinces", ...Array.from(new Set(centers.map((c) => c.province).filter(Boolean)))], [centers]);
 
   const searchQuery = searchParams.get("search") || "";
   const selectedCategory = searchParams.get("category") || "All";

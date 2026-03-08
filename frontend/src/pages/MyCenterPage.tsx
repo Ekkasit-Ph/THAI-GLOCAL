@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigate, useNavigate } from "react-router";
 import {
   Plus, Pencil, Trash2, Building2, Layers, ChevronDown, ChevronUp,
@@ -594,18 +594,26 @@ export function MyCenterPage() {
   const [tab, setTab] = useState<"workshops" | "info">("workshops");
   const [centerExpanded, setCenterExpanded] = useState(false);
 
+  useEffect(() => {
+    if (user) store.fetchMyCenterData(String(user.id));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
   if (!user) return <Navigate to="/login" state={{ from: "/my-center" }} replace />;
 
-  const centers = ((store as any).getCentersByOwner ? (store as any).getCentersByOwner(user.id) : []);
+  const centers = store.myCenters;
   const activeCenter = activeCenterId ? centers.find((c: any) => c.id === activeCenterId) : null;
-  const workshops = activeCenter ? (store as any).getWorkshopsByCenter(activeCenter.id) : [];
+  const workshops = activeCenter
+    ? store.myWorkshops.filter((w: any) => w.centerId === activeCenter.id)
+    : [];
 
-  const saveCenter = (data: typeof EMPTY_CENTER) => {
+  const saveCenter = async (data: typeof EMPTY_CENTER) => {
     if (drawer === "editCenter" && activeCenter) {
-      store.updateCenter(activeCenter.id, data);
+      await store.updateCenter(activeCenter.id, data);
     } else {
-      store.createCenter(String(user.id), data);
+      await store.createCenter(String(user!.id), data);
     }
+    await store.fetchMyCenterData(String(user!.id));
     setDrawer("none");
     setCenterExpanded(false);
   };
@@ -618,24 +626,36 @@ export function MyCenterPage() {
     }
   };
 
-  const executeSaveWorkshop = (data: typeof EMPTY_ACT) => {
+  const executeSaveWorkshop = async (data: typeof EMPTY_ACT) => {
     if (!activeCenter) return;
     if (editingWorkshop) {
-      store.updateWorkshop(editingWorkshop.id, data);
-      (store as any).generateWeeklySessions(editingWorkshop.id);
+      await store.updateWorkshop(editingWorkshop.id, {
+        workshopName: data.title,
+        description: data.description,
+        price: data.price,
+        memberCapacity: data.maxParticipants,
+        workshopType: data.category,
+        workshopImages: data.images,
+      });
       setEditingWorkshop(null);
     } else {
-      const newWorkshop = (store as any).createWorkshop({ ...data, centerId: activeCenter.id, ownerId: user.id });
-      if ((newWorkshop as any).recurringDays && newWorkshop.recurringDays.length > 0) {
-        (store as any).generateWeeklySessions((newWorkshop as any).id);
-      }
+      await store.createWorkshop(activeCenter.id, {
+        workshopName: data.title,
+        description: data.description,
+        price: data.price,
+        memberCapacity: data.maxParticipants,
+        workshopType: data.category,
+        workshopImages: data.images,
+      });
     }
+    await store.fetchMyCenterData(String(user!.id));
     setPendingWorkshopUpdate(null);
     setDrawer("none");
   };
 
-  const handleDeleteWorkshop = (id: string) => {
-    store.deleteWorkshop(id);
+  const handleDeleteWorkshop = async (id: string) => {
+    await store.deleteWorkshop(id);
+    await store.fetchMyCenterData(String(user!.id));
     setConfirmDeleteId(null);
   };
 

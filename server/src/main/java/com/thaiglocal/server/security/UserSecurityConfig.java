@@ -40,8 +40,8 @@ public class UserSecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/signin", "/api/signup").permitAll()
-                .requestMatchers("/admin/users/role/**").hasRole("SYSTEM_ADMIN")
-                .requestMatchers("/admin/**").hasAnyRole("SYSTEM_ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/api/admin/users/role/**").hasRole("SYSTEM_ADMIN")
+                .requestMatchers("/api/admin/**").hasAnyRole("SYSTEM_ADMIN", "SUPER_ADMIN")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

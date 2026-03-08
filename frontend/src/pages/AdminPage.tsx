@@ -54,7 +54,7 @@ export function AdminPage() {
   }, []);
 
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role !== "admin" && user.role !== "super_admin") {
+  if (user.role !== "SYSTEM_ADMIN" && user.role !== "SUPER_ADMIN") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-50">
         <div className="text-center">

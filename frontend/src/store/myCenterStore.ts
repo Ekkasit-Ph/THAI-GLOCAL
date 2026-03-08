@@ -54,16 +54,86 @@ const useMyCenterStore = create<MyCenterState>()(
 
       fetchMyCenterData: async (ownerId) => {
         try {
-          const [cen, work, sess] = await Promise.allSettled([
-            apiClient.get(`/client/centers`),
-            apiClient.get(`/client/workshops`),
-            apiClient.get(`/client/activities`)
-          ]);
-          set({
-            myCenters: cen.status === "fulfilled" ? cen.value as any : [],      
-            myWorkshops: work.status === "fulfilled" ? work.value as any : [],  
-            mySessions: sess.status === "fulfilled" ? sess.value as any : []    
+          const centersRes: any = await apiClient.get(`/client/centers/admin/${ownerId}`);
+          const raw: any[] = Array.isArray(centersRes) ? centersRes : [];
+
+          // Map server field names to frontend form field names
+          const mapped = raw.map((c: any) => ({
+            id: String(c.centerId),
+            name: c.centerName,
+            description: c.description,
+            address: c.address,
+            subDistrict: c.subDistrict,
+            district: c.district,
+            province: c.province,
+            locationLink: c.googleMapLink,
+            email: c.email,
+            lineId: c.line,
+            facebook: c.facebook,
+            website: c.webSite,
+            communityLeaderFirstName: c.leaderFirstName,
+            communityLeaderLastName: c.leaderLastName,
+            communityLeaderTelephone: c.leaderTelephone,
+            images: c.centerImages ?? [],
+            telephones: c.telephones ?? [],
+            createdAt: c.createdAt,
+          }));
+
+          // Fetch workshops for each center in parallel
+          const workshopResults = await Promise.allSettled(
+            mapped.map((c) => apiClient.get(`/client/workshops/center/${c.id}`))
+          );
+          const allWorkshops: any[] = workshopResults.flatMap((r, i) => {
+            if (r.status !== "fulfilled") return [];
+            const list: any[] = Array.isArray(r.value) ? r.value : [];
+            return list.map((w: any) => ({
+              id: String(w.workshopId),
+              centerId: mapped[i].id,
+              title: w.workshopName,
+              description: w.description,
+              price: w.price ?? 0,
+              maxParticipants: w.MemberCapacity ?? 0,
+              category: w.workshopType ?? "",
+              images: w.workshopImages ?? [],
+              duration: "",
+              titleTh: "",
+              recurringDays: [],
+              sessionType: "Daily Time Slots",
+              sessionRounds: [{ start: "13:00", end: "16:00" }],
+              defaultActivityName: "",
+              defaultActivityDescription: "",
+              defaultRegistrationCapacity: w.MemberCapacity ?? 10,
+            }));
           });
+
+          // Fetch activities for each workshop in parallel
+          const activityResults = await Promise.allSettled(
+            allWorkshops.map((w) => apiClient.get(`/client/activities/workshop/${w.id}`))
+          );
+          const allSessions: any[] = activityResults.flatMap((r, i) => {
+            if (r.status !== "fulfilled") return [];
+            const list: any[] = Array.isArray(r.value) ? r.value : [];
+            return list.map((a: any) => {
+              const startDT: string = a.startDate ?? "";
+              const endDT: string = a.endDate ?? "";
+              const regDT: string = a.dateCanRegister ?? "";
+              return {
+                id: String(a.activityId),
+                workshopId: allWorkshops[i].id,
+                name: a.activityName,
+                description: a.description ?? "",
+                date: startDT ? startDT.slice(0, 10) : "",
+                startTime: startDT ? startDT.slice(11, 16) : "",
+                endTime: endDT ? endDT.slice(11, 16) : "",
+                registrationDeadline: regDT ? regDT.slice(0, 10) : "",
+                maxParticipants: a.registerCapacity ?? 0,
+                notes: "",
+                status: "upcoming" as UserSession["status"],
+              };
+            });
+          });
+
+          set({ myCenters: mapped, myWorkshops: allWorkshops, mySessions: allSessions });
         } catch (e) {
           console.error(e);
         }
@@ -120,20 +190,53 @@ const useMyCenterStore = create<MyCenterState>()(
       },
 
       createWorkshop: async (centerId, data: any) => {
-        await apiClient.post(`/client/workshops/create`, { ...data, centerId });
+        await apiClient.post(`/client/workshops/create`, {
+          workshopName: data.workshopName ?? data.title,
+          description: data.description,
+          price: data.price,
+          memberCapacity: data.memberCapacity ?? data.MemberCapacity ?? data.maxParticipants,
+          workshopType: data.workshopType ?? data.category,
+          centerId: Number(centerId),
+          workshopImages: data.workshopImages ?? data.images ?? [],
+        });
       },
       updateWorkshop: async (id, data) => {
-        await apiClient.patch(`/client/workshops/update/${id}`, data);
+        await apiClient.patch(`/client/workshops/update/${id}`, {
+          workshopName: data.workshopName ?? data.title,
+          description: data.description,
+          price: data.price,
+          memberCapacity: data.memberCapacity ?? data.MemberCapacity ?? data.maxParticipants,
+          workshopType: data.workshopType ?? data.category,
+          workshopImages: data.workshopImages ?? data.images,
+        });
       },
       deleteWorkshop: async (id) => {
         await apiClient.delete(`/client/workshops/delete/${id}`);
       },
 
       createSession: async (workshopId, data: any) => {
-         await apiClient.post(`/client/activities/workshop/${workshopId}/create`, data);
+        const buildDateTime = (date: string, time: string) => `${date}T${time}${time.length === 5 ? ":00" : ""}`;
+        await apiClient.post(`/client/activities/workshop/${workshopId}/create`, {
+          activityName: data.activityName ?? data.name,
+          description: data.description,
+          startDate: buildDateTime(data.date, data.startTime ?? "09:00"),
+          endDate: buildDateTime(data.date, data.endTime ?? "18:00"),
+          dateCanRegister: buildDateTime(data.registrationDeadline ?? data.date, "23:59"),
+          price: data.price ?? 0,
+          registerCapacity: data.registerCapacity ?? data.maxParticipants,
+        });
       },
-      updateSession: async (id, data) => {
-        await apiClient.patch(`/client/activities/update/${id}`, data);
+      updateSession: async (id, data: any) => {
+        const buildDateTime = (date: string, time: string) => `${date}T${time}${time.length === 5 ? ":00" : ""}`;
+        await apiClient.patch(`/client/activities/update/${id}`, {
+          activityName: data.activityName ?? data.name,
+          description: data.description,
+          startDate: buildDateTime(data.date, data.startTime ?? "09:00"),
+          endDate: buildDateTime(data.date, data.endTime ?? "18:00"),
+          dateCanRegister: buildDateTime(data.registrationDeadline ?? data.date, "23:59"),
+          price: data.price ?? 0,
+          registerCapacity: data.registerCapacity ?? data.maxParticipants,
+        });
       },
       deleteSession: async (id) => {
         await apiClient.delete(`/client/activities/delete/${id}`);

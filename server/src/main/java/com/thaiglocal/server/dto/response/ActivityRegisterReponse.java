@@ -2,7 +2,11 @@ package com.thaiglocal.server.dto.response;
 
 import com.thaiglocal.server.model.enums.ActivityRegisterStatus;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Setter
 @Getter
@@ -11,6 +15,9 @@ import lombok.*;
 @Builder
 public class ActivityRegisterReponse {
     private Long activityRegisterId;
+    private Long activityId;
+    private String activityName;
+    private String startDate;
     private String username;
     private Integer numberOfRegister;
     private ActivityRegisterStatus status;

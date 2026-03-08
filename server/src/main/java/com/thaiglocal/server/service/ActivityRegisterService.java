@@ -32,12 +32,19 @@ public class ActivityRegisterService {
     }
 
     private ActivityRegisterReponse mapToActivityRegisterResponse(ActivityRegister activityRegister) {
+        Activity activity = activityRegister.getActivity();
+        int count = activityRegister.getNumberOfRegister() != null ? activityRegister.getNumberOfRegister() : 0;
+        double price = activity != null && activity.getPrice() != null ? activity.getPrice() : 0.0;
         return ActivityRegisterReponse.builder()
                 .activityRegisterId(activityRegister.getActivityRegisterId())
+                .activityId(activity != null ? activity.getActivityId() : null)
+                .activityName(activity != null ? activity.getActivityName() : null)
+                .startDate(activity != null && activity.getStartDate() != null
+                        ? activity.getStartDate().toString() : null)
                 .username(activityRegister.getUser().getUsername())
-                .numberOfRegister(activityRegister.getNumberOfRegister())
+                .numberOfRegister(count)
                 .status(activityRegister.getStatus())
-                .totalPrice(activityRegister.getNumberOfRegister() * activityRegister.getActivity().getPrice())
+                .totalPrice(count * price)
                 .build();
     }
 

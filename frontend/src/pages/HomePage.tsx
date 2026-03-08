@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { Search, MapPin, Star, Users, ChevronRight, Sparkles, Award, Globe } from "lucide-react";
-import { activities, centers } from "../data/mockData";
+import useDataStore from "../store/dataStore";
 import { WorkshopCard } from "../components/WorkshopCard";
 
 export function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+  const { activities, centers, fetchData, isLoading } = useDataStore();
+
+  useEffect(() => { fetchData(); }, []);
 
   const featured = activities.slice(0, 3);
 

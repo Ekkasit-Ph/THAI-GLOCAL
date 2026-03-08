@@ -5,10 +5,14 @@ import apiClient from "../api/axiosClient";
 export interface Booking {
   id: string;
   activityId: string;
+  activityName?: string;
+  startDate?: string | null;
   userId: string;
-  status: "pending" | "confirmed" | "cancelled";
+  status: "pending" | "confirmed" | "cancelled" | "completed";
+  participants?: number;
+  totalPrice?: number;
   createdAt: string;
-  qrCodeUrl?: string; // Could be mapped from Spring Boot later
+  qrCodeUrl?: string;
   [key: string]: any;
 }
 
@@ -33,9 +37,20 @@ const useBookingStore = create<BookingState>((set, get) => ({
   fetchUserBookings: async (userId) => {
     set({ isLoading: true, error: null });
     try {
-      // ActivityRegisters mapping
       const res = await apiClient.get(`/client/activity-registers/user/${userId}`);
-      if (res) set({ bookings: Array.isArray(res) ? res : [] });
+      const raw: any[] = Array.isArray(res) ? res : [];
+      const bookings: Booking[] = raw.filter(Boolean).map((r) => ({
+        id: String(r.activityRegisterId ?? ""),
+        activityId: String(r.activityId ?? ""),
+        activityName: r.activityName ?? "",
+        startDate: r.startDate ?? null,
+        userId: String(userId),
+        status: r.status ? String(r.status).toLowerCase() as Booking["status"] : "pending",
+        participants: r.numberOfRegister ?? 1,
+        totalPrice: r.totalPrice ?? 0,
+        createdAt: "",
+      }));
+      set({ bookings });
     } catch (err: any) {
       set({ error: err.message || "Failed to fetch bookings" });
     } finally {
@@ -47,11 +62,9 @@ const useBookingStore = create<BookingState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const payload = { ...customOptions };
-      const res = await apiClient.post(`/client/activity-registers/create/activity/${activityId}/user/${userId}`, payload);
-      
-      const newBooking = res as unknown as Booking;
-      set((state) => ({ bookings: [...state.bookings, newBooking] }));
-      return newBooking;
+      await apiClient.post(`/client/activity-registers/create/activity/${activityId}/user/${userId}`, payload);
+      await get().fetchUserBookings(userId);
+      return null;
     } catch (err: any) {
       set({ error: err.message || "Failed to create booking" });
       return null;
@@ -63,7 +76,7 @@ const useBookingStore = create<BookingState>((set, get) => ({
   cancelBooking: async (bookingId) => {
     set({ isLoading: true, error: null });
     try {
-      await apiClient.delete(`/client/activity-registers/delete/${bookingId}`); // Verify if delete or update status mapping
+      await apiClient.patch(`/client/activity-registers/${bookingId}/cancel`);
       set((state) => ({
         bookings: state.bookings.filter(b => b.id !== bookingId)
       }));

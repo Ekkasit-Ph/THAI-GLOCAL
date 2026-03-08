@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router";
 import {
   Clock,
@@ -15,11 +15,13 @@ import {
   X,
   PartyPopper,
 } from "lucide-react";
-import { activities, centers, Session } from "../data/mockData";
+import { Session } from "../data/mockData";
+import useDataStore from "../store/dataStore";
 import useBookingStore from "../store/bookingStore";
 import useAuthStore from "../store/authStore";
 import { toast } from "sonner";
 import { ImageCarousel } from "../components/ImageCarousel";
+import apiClient from "../api/axiosClient";
 
 function BookingModal({
   session,
@@ -411,11 +413,36 @@ function ActivityDetailModal({
 
 export function WorkshopDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const activity = activities.find((a) => a.id === id);
+  const { activities, centers, fetchData } = useDataStore();
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [detailSession, setDetailSession] = useState<Session | null>(null);
   const [bookingSession, setBookingSession] = useState<Session | null>(null);
   const [successBookingId, setSuccessBookingId] = useState<string | null>(null);
   const [successSession, setSuccessSession] = useState<Session | null>(null);
+
+  useEffect(() => { if (activities.length === 0) fetchData(); }, []);
+
+  useEffect(() => {
+    if (!id) return;
+    apiClient.get(`/client/activities/workshop/${id}`)
+      .then((res: any) => {
+        const list: any[] = Array.isArray(res) ? res : [];
+        setSessions(list.map((a: any) => ({
+          id: String(a.activityId),
+          name: a.activityName ?? "",
+          description: a.description ?? "",
+          activityId: id,
+          date: a.startDate ? a.startDate.slice(0, 10) : "",
+          time: a.startDate ? a.startDate.slice(11, 16) : "",
+          availableSpots: Math.max(0, (a.registerCapacity ?? 0) - (a.registerInfo?.length ?? 0)),
+          totalSpots: a.registerCapacity ?? 0,
+        })));
+      })
+      .catch(() => setSessions([]));
+  }, [id]);
+
+  const activityBase = activities.find((a) => a.id === String(id));
+  const activity: (typeof activityBase) = activityBase ? ({ ...activityBase, sessions } as any) : undefined;
 
   if (!activity) {
     return (

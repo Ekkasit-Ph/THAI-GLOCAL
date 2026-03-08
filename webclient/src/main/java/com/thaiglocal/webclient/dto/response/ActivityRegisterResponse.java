@@ -4,6 +4,9 @@ import com.thaiglocal.webclient.dto.enums.ActivityRegisterStatus;
 
 public record ActivityRegisterResponse(
         Long activityRegisterId,
+        Long activityId,
+        String activityName,
+        String startDate,
         String username,
         Integer numberOfRegister,
         ActivityRegisterStatus status,

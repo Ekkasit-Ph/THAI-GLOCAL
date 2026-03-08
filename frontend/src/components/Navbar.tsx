@@ -63,7 +63,7 @@ export function Navbar() {
           { to: "/my-center", label: t.nav.myCenter, icon: Building2 },
         ]
       : []),
-    ...(user && (user.role === "admin" || user.role === "super_admin")
+    ...(user && (user.role === "SYSTEM_ADMIN" || user.role === "SUPER_ADMIN")
       ? [{ to: "/admin", label: t.nav.adminPanel, icon: ShieldAlert }]
       : []),
   ];
