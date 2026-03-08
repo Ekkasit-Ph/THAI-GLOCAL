@@ -33,4 +33,5 @@ public class CenterResponse {
     private String leaderTelephone;
     private List<String> centerImages;
     private List<String> telephones;
+    private List<StaffResponse> staffResponses;
 }
