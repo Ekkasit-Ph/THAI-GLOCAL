@@ -40,7 +40,7 @@ export function SignUpPage() {
     setLoading(true);
     try {
       await signup({ username: username.trim(), email: email.trim(), password, role });
-      navigate("/login", { replace: true });
+      navigate("/create-profile", { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Sign up failed.");
     } finally {

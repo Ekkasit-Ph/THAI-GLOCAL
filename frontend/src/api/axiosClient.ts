@@ -4,6 +4,7 @@ import axios from 'axios';
 export const apiClient = axios.create({
   // BaseURL is / to allow /api and /client to properly process
   baseURL: '/',
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },

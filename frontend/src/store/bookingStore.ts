@@ -33,7 +33,7 @@ const useBookingStore = create<BookingState>((set, get) => ({
     try {
       // ActivityRegisters mapping
       const res = await apiClient.get(`/client/activity-registers/user/${userId}`);
-      if (res.data) set({ bookings: res.data });
+      if (res) set({ bookings: Array.isArray(res) ? res : [] });
     } catch (err: any) {
       set({ error: err.message || "Failed to fetch bookings" });
     } finally {
@@ -47,7 +47,7 @@ const useBookingStore = create<BookingState>((set, get) => ({
       const payload = { ...customOptions };
       const res = await apiClient.post(`/client/activity-registers/create/activity/${activityId}/user/${userId}`, payload);
       
-      const newBooking = res.data;
+      const newBooking = res;
       set((state) => ({ bookings: [...state.bookings, newBooking] }));
       return newBooking;
     } catch (err: any) {

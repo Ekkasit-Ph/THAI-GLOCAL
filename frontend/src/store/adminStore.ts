@@ -97,9 +97,9 @@ const useAdminStore = create<AdminState>((set, get) => ({
         apiClient.get(`/client/admin/registration-requests`)
       ]);
 
-      const users = usersRes.status === "fulfilled" ? usersRes.value.data : [];
-      const centers = centersRes.status === "fulfilled" ? centersRes.value.data : [];
-      const requests = requestsRes.status === "fulfilled" ? requestsRes.value.data : [];
+      const users = usersRes.status === "fulfilled" ? (Array.isArray(usersRes.value) ? usersRes.value : []) : [];
+      const centers = centersRes.status === "fulfilled" ? (Array.isArray(centersRes.value) ? centersRes.value : []) : [];
+      const requests = requestsRes.status === "fulfilled" ? (Array.isArray(requestsRes.value) ? requestsRes.value : []) : [];
 
       const statuses: Record<string, CenterStatus> = {};
       centers.forEach((c: any) => { statuses[c.id] = c.centerStatus ?? "active"; });

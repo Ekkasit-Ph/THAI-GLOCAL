@@ -31,14 +31,15 @@ const useAuthStore = create<AuthState>()(
 
       login: async (userData: any) => {
         try {
-          // Send request through gateway proxy directly into the WebClient /client pipeline 
-          const loginData = { email: userData.email, password: userData.password };
-          const response = await apiClient.post("/client/users/signin", loginData);
-          if (response && response.data) {
-             set({ isAuthenticated: true, user: response.data });
-          } else {
-             set({ isAuthenticated: true, user: userData });
-          }
+          // POST directly to server so JWT Set-Cookie headers reach the browser
+          const loginData = { usernameOrEmail: userData.email, password: userData.password };
+          const response: any = await apiClient.post("/api/signin", loginData);
+          // Server returns { userResponse: {...}, accessToken, refreshToken }
+          const userResponse = response?.userResponse ?? response;
+          set({
+            isAuthenticated: true,
+            user: { ...userResponse, id: String(userResponse.userId ?? userResponse.id) },
+          });
         } catch (e: any) { console.error("Login failed", e); throw e; }
       },
 
@@ -50,7 +51,7 @@ const useAuthStore = create<AuthState>()(
               password: userData.password,
               role: (userData.role || "USER").toUpperCase()
             };
-            const response = await apiClient.post("/client/users/signup", signupData);
+            const response = await apiClient.post("/api/signup", signupData);
             // Do not immediately authenticate after signup so the user is redirected to login
          } catch(e: any) {
             let errorMsg = "Registration failed. Please try again later.";

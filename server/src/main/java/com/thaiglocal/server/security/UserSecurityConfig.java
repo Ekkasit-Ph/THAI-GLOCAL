@@ -1,5 +1,7 @@
 package com.thaiglocal.server.security;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,7 +19,6 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import lombok.AllArgsConstructor;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -51,8 +52,13 @@ public class UserSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:8100", "http://localhost:8081")); // URL ของ Frontend
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedOrigins(List.of(
+            "http://localhost:5173",  // Vite dev server
+            "http://localhost:8080",  // Webclient
+            "http://localhost:8081",  // Server (self)
+            "http://localhost:8100"   // Ionic/Capacitor dev
+        ));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
 
