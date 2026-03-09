@@ -31,15 +31,30 @@ const useAuthStore = create<AuthState>()(
 
       login: async (userData: any) => {
         try {
-          // Send request through gateway proxy directly into the WebClient /client pipeline 
-         const loginData = { usernameOrEmail: userData.email, password: userData.password };
+          // Send request through gateway proxy directly into the WebClient /client pipeline
+          const loginData = { usernameOrEmail: userData.email, password: userData.password };
           const response = await apiClient.post("/client/users/signin", loginData);
-          if (response && response.data) {
-             set({ isAuthenticated: true, user: response.data });
-          } else {
-             set({ isAuthenticated: true, user: userData });
-          }
-        } catch (e: any) { console.error("Login failed", e); throw e; }
+
+          // apiClient interceptor already unwraps to response.data
+          const signedIn = response as any;
+          const userResponse = signedIn?.userResponse ?? signedIn;
+
+          const mappedUser = userResponse
+            ? {
+                id: String(userResponse.userId ?? userResponse.id ?? ""),
+                firstName: userResponse.firstName,
+                lastName: userResponse.lastName,
+                email: userResponse.email,
+                role: String(userResponse.role ?? userResponse.roleName ?? "").toString(),
+                ...userResponse,
+              }
+            : userData;
+
+          set({ isAuthenticated: true, user: mappedUser });
+        } catch (e: any) {
+          console.error("Login failed", e);
+          throw e;
+        }
       },
 
         signup: async (userData: any) => {
@@ -75,7 +90,8 @@ const useAuthStore = create<AuthState>()(
         set((state) => ({ user: { ...state.user, ...userData } as User }));
       },
       logout: () => {
-        alert("Logout triggered - Clearing Session");
+        // Call server signout to clear httpOnly cookies
+        apiClient.post("/client/users/signout").catch(() => {});
         set({ isAuthenticated: false, user: null });
       },
       forgotPassword: async (email: string) => {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigate, useNavigate } from "react-router";
 import {
   Plus, Pencil, Trash2, Building2, Layers, ChevronDown, ChevronUp,
@@ -108,14 +108,15 @@ const EMPTY_CENTER = {
 
 function CenterForm({ initial, onSave, onCancel }: {
   initial?: Partial<typeof EMPTY_CENTER>;
-  onSave: (data: typeof EMPTY_CENTER) => void;
+  onSave: (data: any) => void;
   onCancel?: () => void;
 }) {
   const [form, setForm] = useState({ ...EMPTY_CENTER, ...initial });
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const set = (k: keyof typeof EMPTY_CENTER, v: string | string[]) => setForm((f) => ({ ...f, [k]: v }));
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSave(form); }} className="flex flex-col gap-4">
+    <form onSubmit={(e) => { e.preventDefault(); onSave({ ...form, imageFiles }); }} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className={labelCls}>Center Name *</label>
@@ -207,8 +208,9 @@ function CenterForm({ initial, onSave, onCancel }: {
               const files = Array.from(e.target.files || []);
               if (files.length === 0) return;
               
+              const accepted = files.slice(0, 3 - form.images.length);
               const newImagesInfo = await Promise.all(
-                files.slice(0, 3 - form.images.length).map((file) => {
+                accepted.map((file) => {
                   return new Promise<string>((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onload = () => resolve(reader.result as string);
@@ -219,6 +221,7 @@ function CenterForm({ initial, onSave, onCancel }: {
               );
               
               set("images", [...form.images, ...newImagesInfo]);
+              setImageFiles((prev) => [...prev, ...accepted]);
             }}
             className="block w-full text-sm text-stone-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 transition-colors cursor-pointer"
           />
@@ -229,7 +232,7 @@ function CenterForm({ initial, onSave, onCancel }: {
                   <img src={img} alt={`Center preview ${i+1}`} className="w-24 h-24 object-cover rounded-xl border border-stone-200" />
                   <button 
                     type="button" 
-                    onClick={() => set("images", form.images.filter((_, idx) => idx !== i))}
+                    onClick={() => { set("images", form.images.filter((_, idx) => idx !== i)); setImageFiles((prev) => prev.filter((_, idx) => idx !== i)); }}
                     className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-sm border border-stone-100 text-stone-400 hover:text-red-500"
                   >
                     <X className="w-4 h-4" />
@@ -594,18 +597,56 @@ export function MyCenterPage() {
   const [tab, setTab] = useState<"workshops" | "info">("workshops");
   const [centerExpanded, setCenterExpanded] = useState(false);
 
+  useEffect(() => {
+    if (user) {
+      const userId = user.id || user.userId;
+      if (userId) store.fetchMyCenterData(String(userId));
+    }
+  }, [user]);
+
   if (!user) return <Navigate to="/login" state={{ from: "/my-center" }} replace />;
 
-  const centers = ((store as any).getCentersByOwner ? (store as any).getCentersByOwner(user.id) : []);
-  const activeCenter = activeCenterId ? centers.find((c: any) => c.id === activeCenterId) : null;
-  const workshops = activeCenter ? (store as any).getWorkshopsByCenter(activeCenter.id) : [];
+  // Map API fields to UI fields
+  const centers = (store.myCenters || []).map((c: any) => ({
+    ...c,
+    id: c.centerId ?? c.id,
+    name: c.centerName ?? c.name,
+    images: c.centerImages ?? c.images ?? [],
+    locationLink: c.googleMapLink ?? c.locationLink,
+    lineId: c.line ?? c.lineId,
+    website: c.webSite ?? c.website,
+    communityLeaderFirstName: c.leaderFirstName ?? c.communityLeaderFirstName,
+    communityLeaderLastName: c.leaderLastName ?? c.communityLeaderLastName,
+    communityLeaderTelephone: c.leaderTelephone ?? c.communityLeaderTelephone,
+  }));
+  const activeCenter = activeCenterId ? centers.find((c: any) => String(c.id) === String(activeCenterId)) : null;
+  const workshops = activeCenter
+    ? (store.myWorkshops || []).filter((w: any) => String(w.centerId) === String(activeCenter.id)).map((w: any) => ({
+        ...w,
+        id: w.workshopId ?? w.id,
+        name: w.workshopName ?? w.name,
+        title: w.workshopName ?? w.title ?? w.name,
+        images: w.workshopImages ?? w.images ?? [],
+        category: w.workshopType ?? w.category,
+        maxParticipants: w.memberCapacity ?? w.maxParticipants,
+      }))
+    : [];
 
-  const saveCenter = (data: typeof EMPTY_CENTER) => {
+  const saveCenter = async (data: typeof EMPTY_CENTER) => {
     if (drawer === "editCenter" && activeCenter) {
-      store.updateCenter(activeCenter.id, data);
+      await store.updateCenter(activeCenter.id, data);
     } else {
-      const newCenter = (store as any).createCenter({ ...data, ownerId: user.id });
-      setActiveCenterId(newCenter.id);
+      const userId = user?.id || user?.userId;
+      if (!userId) {
+        alert("Cannot create center: missing user id. Please log in again.");
+        return;
+      }
+      const created: any = await store.createCenter(String(userId), { ...data });
+      // If backend returns the new center, set it active
+      const newId = created?.centerId ?? created?.id;
+      if (newId) setActiveCenterId(String(newId));
+      // Refresh list after creation
+      await store.fetchMyCenterData(String(userId));
     }
     setDrawer("none");
     setCenterExpanded(false);

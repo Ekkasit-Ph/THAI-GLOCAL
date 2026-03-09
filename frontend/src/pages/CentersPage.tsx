@@ -1,10 +1,15 @@
+import { useEffect } from "react";
 import { useParams, Link } from "react-router";
 import { MapPin, Star, ChevronLeft } from "lucide-react";
-import { centers, activities } from "../data/mockData";
+import useDataStore from "../store/dataStore";
 import { WorkshopCard } from "../components/WorkshopCard";
 import { ImageCarousel } from "../components/ImageCarousel";
 
 export function CentersPage() {
+  const { centers, activities, fetchData } = useDataStore();
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
   const centerList = centers;
 
   return (
@@ -90,6 +95,10 @@ export function CentersPage() {
 
 export function CenterDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { centers, activities, fetchData } = useDataStore();
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
   const center = centers.find((c) => c.id === id);
 
   if (!center) {

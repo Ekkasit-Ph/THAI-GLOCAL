@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { Clock, Users, Star, MapPin } from "lucide-react";
-import { Activity, centers } from "../data/mockData";
+import useDataStore, { Activity } from "../store/dataStore";
 import { ImageCarousel } from "./ImageCarousel";
 
 interface WorkshopCardProps {
@@ -9,6 +9,7 @@ interface WorkshopCardProps {
 }
 
 export function WorkshopCard({ activity, compact = false }: WorkshopCardProps) {
+  const centers = useDataStore((s) => s.centers);
   const center = centers.find((c) => c.id === activity.centerId);
   const nextSession = activity.sessions.find((s: any) => s.availableSpots > 0);
   const isAvailable = !!nextSession;

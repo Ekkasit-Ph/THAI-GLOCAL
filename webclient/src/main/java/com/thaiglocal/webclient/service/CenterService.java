@@ -24,11 +24,11 @@ public class CenterService {
                                 .build();
         }
 
-        public Flux<CenterResponse> getAllCenters(String cookieHeader) {
+        public Flux<CenterResponse> getAllCenters(String authHeader) {
                 return centerWebClient
                                 .get()
                                 .uri("/api/centers")
-                                .headers(h -> addCookie(h, cookieHeader))
+                                .headers(h -> addAuthHeader(h, authHeader))
                                 .retrieve()
                                 .onStatus(HttpStatusCode::is4xxClientError,
                                                 cr -> Mono.error(new RuntimeException(
@@ -39,14 +39,14 @@ public class CenterService {
                                 .bodyToFlux(CenterResponse.class);
         }
 
-        public Flux<CenterResponse> searchCentersByName(String centerName, String cookieHeader) {
+        public Flux<CenterResponse> searchCentersByName(String centerName, String authHeader) {
                 return centerWebClient
                                 .get()
                                 .uri(uriBuilder -> uriBuilder
                                                 .path("/api/centers/search")
                                                 .queryParam("name", centerName)
                                                 .build())
-                                .headers(h -> addCookie(h, cookieHeader))
+                                .headers(h -> addAuthHeader(h, authHeader))
                                 .retrieve()
                                 .onStatus(HttpStatusCode::is4xxClientError,
                                                 cr -> Mono.error(new RuntimeException(
@@ -57,11 +57,11 @@ public class CenterService {
                                 .bodyToFlux(CenterResponse.class);
         }
 
-        public Flux<CenterResponse> getCentersByAdminId(Long userId, String cookieHeader) {
+        public Flux<CenterResponse> getCentersByAdminId(Long userId, String authHeader) {
                 return centerWebClient
                                 .get()
                                 .uri("/api/centers/admin/{userId}", userId)
-                                .headers(h -> addCookie(h, cookieHeader))
+                                .headers(h -> addAuthHeader(h, authHeader))
                                 .retrieve()
                                 .onStatus(HttpStatusCode::is4xxClientError,
                                                 cr -> Mono.error(new RuntimeException(
@@ -72,11 +72,11 @@ public class CenterService {
                                 .bodyToFlux(CenterResponse.class);
         }
 
-        public Mono<CenterResponse> getCenterById(Long centerId, String cookieHeader) {
+        public Mono<CenterResponse> getCenterById(Long centerId, String authHeader) {
                 return centerWebClient
                                 .get()
                                 .uri("/api/centers/{centerId}", centerId)
-                                .headers(h -> addCookie(h, cookieHeader))
+                                .headers(h -> addAuthHeader(h, authHeader))
                                 .retrieve()
                                 .onStatus(HttpStatusCode::is4xxClientError,
                                                 cr -> Mono.error(new RuntimeException(
@@ -87,27 +87,29 @@ public class CenterService {
                                 .bodyToMono(CenterResponse.class);
         }
 
-        public Mono<Void> createCenter(Long userId, CenterRequest request, String cookieHeader) {
+        public Mono<Void> createCenter(Long userId, CenterRequest request, String authHeader) {
                 return centerWebClient
                                 .post()
                                 .uri("/api/centers/create/user/{userId}", userId)
-                                .headers(h -> addCookie(h, cookieHeader))
+                                .headers(h -> addAuthHeader(h, authHeader))
                                 .bodyValue(request)
                                 .retrieve()
                                 .onStatus(HttpStatusCode::is4xxClientError,
-                                                cr -> Mono.error(new RuntimeException(
-                                                                "Client error during createCenter")))
+                                                cr -> cr.bodyToMono(String.class)
+                                                                .flatMap(body -> Mono.error(new RuntimeException(
+                                                                                "Client error during createCenter: " + body))))
                                 .onStatus(HttpStatusCode::is5xxServerError,
-                                                cr -> Mono.error(new RuntimeException(
-                                                                "Server error during createCenter")))
+                                                cr -> cr.bodyToMono(String.class)
+                                                                .flatMap(body -> Mono.error(new RuntimeException(
+                                                                                "Server error during createCenter: " + body))))
                                 .bodyToMono(Void.class);
         }
 
-        public Mono<Void> addCenterAdmin(Long centerId, Long userId, String cookieHeader) {
+        public Mono<Void> addCenterAdmin(Long centerId, Long userId, String authHeader) {
                 return centerWebClient
                                 .post()
                                 .uri("/api/centers/{centerId}/add-admin/{userId}", centerId, userId)
-                                .headers(h -> addCookie(h, cookieHeader))
+                                .headers(h -> addAuthHeader(h, authHeader))
                                 .retrieve()
                                 .onStatus(HttpStatusCode::is4xxClientError,
                                                 cr -> Mono.error(new RuntimeException(
@@ -118,11 +120,11 @@ public class CenterService {
                                 .bodyToMono(Void.class);
         }
 
-        public Mono<Void> addCenterStaff(Long centerId, Long userId, String cookieHeader) {
+        public Mono<Void> addCenterStaff(Long centerId, Long userId, String authHeader) {
                 return centerWebClient
                                 .post()
                                 .uri("/api/centers/{centerId}/add-staff/{userId}", centerId, userId)
-                                .headers(h -> addCookie(h, cookieHeader))
+                                .headers(h -> addAuthHeader(h, authHeader))
                                 .retrieve()
                                 .onStatus(HttpStatusCode::is4xxClientError,
                                                 cr -> Mono.error(new RuntimeException(
@@ -133,11 +135,11 @@ public class CenterService {
                                 .bodyToMono(Void.class);
         }
 
-        public Mono<Void> updateCenter(Long centerId, CenterRequest request, String cookieHeader) {
+        public Mono<Void> updateCenter(Long centerId, CenterRequest request, String authHeader) {
                 return centerWebClient
                                 .patch()
                                 .uri("/api/centers/update/{centerId}", centerId)
-                                .headers(h -> addCookie(h, cookieHeader))
+                                .headers(h -> addAuthHeader(h, authHeader))
                                 .bodyValue(request)
                                 .retrieve()
                                 .onStatus(HttpStatusCode::is4xxClientError,
@@ -149,11 +151,11 @@ public class CenterService {
                                 .bodyToMono(Void.class);
         }
 
-        public Mono<Void> deleteCenter(Long centerId, String cookieHeader) {
+        public Mono<Void> deleteCenter(Long centerId, String authHeader) {
                 return centerWebClient
                                 .delete()
                                 .uri("/api/centers/delete/{centerId}", centerId)
-                                .headers(h -> addCookie(h, cookieHeader))
+                                .headers(h -> addAuthHeader(h, authHeader))
                                 .retrieve()
                                 .onStatus(HttpStatusCode::is4xxClientError,
                                                 cr -> Mono.error(new RuntimeException(
@@ -164,9 +166,9 @@ public class CenterService {
                                 .bodyToMono(Void.class);
         }
 
-        private void addCookie(HttpHeaders headers, String cookieHeader) {
-                if (cookieHeader != null && !cookieHeader.isBlank()) {
-                        headers.add("Cookie", cookieHeader);
+        private void addAuthHeader(HttpHeaders headers, String authHeader) {
+                if (authHeader != null && !authHeader.isBlank()) {
+                        headers.add(HttpHeaders.AUTHORIZATION, authHeader);
                 }
         }
 }

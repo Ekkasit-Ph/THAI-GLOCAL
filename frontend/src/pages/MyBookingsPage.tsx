@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, Navigate } from "react-router";
 import {
   Calendar,
@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import useBookingStore from "../store/bookingStore";
 import useAuthStore from "../store/authStore";
-import { activities, centers, Booking } from "../data/mockData";
+import useDataStore, { Booking } from "../store/dataStore";
 
 function getStatusIcon(status: Booking["status"]) {
   if (status === "confirmed") return <CheckCircle2 className="w-4 h-4 text-green-500" />;
@@ -33,8 +33,11 @@ export function MyBookingsPage() {
   const bookings = useBookingStore((s) => s.bookings);
   const cancelBooking = useBookingStore((s) => s.cancelBooking);
   const requestCancellation = useBookingStore((s) => s.requestCancellation);
+  const { activities, centers, fetchData } = useDataStore();
   const [tab, setTab] = useState<"upcoming" | "all">("upcoming");
   const [cancelId, setCancelId] = useState<string | null>(null);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   if (!user) return <Navigate to="/login" state={{ from: "/my-bookings" }} replace />;
 

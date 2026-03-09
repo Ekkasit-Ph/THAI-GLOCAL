@@ -50,8 +50,8 @@ public class CookieResponseAdvice implements ResponseBodyAdvice<Object> {
                         ResponseCookie accessCookie = ResponseCookie
                             .from(ACCESS_TOKEN, accessToken)
                             .httpOnly(true)
-                            .secure(true)
-                            .sameSite("Strict")
+                            .secure(false)
+                            .sameSite("Lax")
                             .path("/")
                             .maxAge(Duration.ofMinutes(15))
                             .build();
@@ -62,8 +62,8 @@ public class CookieResponseAdvice implements ResponseBodyAdvice<Object> {
                         ResponseCookie refreshCookie = ResponseCookie
                             .from(REFRESH_TOKEN, refreshToken)
                             .httpOnly(true)
-                            .secure(true)
-                            .sameSite("Strict")
+                            .secure(false)
+                            .sameSite("Lax")
                             .path("/")
                             .maxAge(Duration.ofDays(7))
                             .build();

@@ -66,7 +66,7 @@ public class UserController {
 
         ResponseCookie accessCookie = ResponseCookie.from(ACCESS_TOKEN, response.getAccessToken())
             .httpOnly(true)
-            .secure(true)
+            .secure(false) // dev: allow over http
             .sameSite("Strict")
             .path("/")
             .maxAge(Duration.ofMinutes(15))
@@ -74,7 +74,7 @@ public class UserController {
 
         ResponseCookie refreshCookie = ResponseCookie.from(REFRESH_TOKEN, response.getRefreshToken())
             .httpOnly(true)
-            .secure(true)
+            .secure(false) // dev: allow over http
             .sameSite("Strict")
             .path("/")
             .maxAge(Duration.ofDays(7))
@@ -131,7 +131,7 @@ public class UserController {
     ) {
         ResponseCookie accessCookie = ResponseCookie.from(ACCESS_TOKEN, "")
             .httpOnly(true)
-            .secure(true)
+            .secure(false) // dev: allow over http
             .sameSite("Strict")
             .path("/")
             .maxAge(Duration.ofMinutes(0))
@@ -139,7 +139,7 @@ public class UserController {
 
         ResponseCookie refreshCookie = ResponseCookie.from(REFRESH_TOKEN, "")
             .httpOnly(true)
-            .secure(true)
+            .secure(false) // dev: allow over http
             .sameSite("Strict")
             .path("/")
             .maxAge(Duration.ofDays(0))

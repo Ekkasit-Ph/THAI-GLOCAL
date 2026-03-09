@@ -20,7 +20,7 @@ interface MyCenterState {
 
   fetchMyCenterData: (ownerId: string) => Promise<void>;
 
-  createCenter: (userId: string, data: any) => Promise<void>;
+  createCenter: (userId: string, data: any) => Promise<any>;
   updateCenter: (id: string, data: any) => Promise<void>;
   deleteCenter: (id: string) => Promise<void>;
 
@@ -54,23 +54,72 @@ const useMyCenterStore = create<MyCenterState>()(
 
       fetchMyCenterData: async (ownerId) => {
         try {
-          const [cen, work, sess] = await Promise.allSettled([
-            apiClient.get(`/client/centers`),
-            apiClient.get(`/client/workshops`),
-            apiClient.get(`/client/activities`)
-          ]);
-          set({
-            myCenters: cen.status === "fulfilled" ? cen.value as any : [],      
-            myWorkshops: work.status === "fulfilled" ? work.value as any : [],  
-            mySessions: sess.status === "fulfilled" ? sess.value as any : []    
-          });
+          // Fetch user's own centers
+          const cenRes: any = await apiClient.get(`/client/centers/admin/${ownerId}`);
+          const myCenters = Array.isArray(cenRes) ? cenRes : [];
+
+          // Fetch workshops for each center, tagging with centerId
+          const workshopResults = await Promise.allSettled(
+            myCenters.map((c: any) =>
+              apiClient.get(`/client/workshops/center/${c.centerId}`).then((res: any) =>
+                (Array.isArray(res) ? res : []).map((w: any) => ({ ...w, centerId: c.centerId }))
+              )
+            )
+          );
+          const myWorkshops = workshopResults.flatMap((r) =>
+            r.status === "fulfilled" ? r.value : []
+          );
+
+          set({ myCenters, myWorkshops, mySessions: [] });
         } catch (e) {
-          console.error(e);
+          console.error("fetchMyCenterData error:", e);
         }
       },
 
       createCenter: async (userId: string, data: any) => {
-        await apiClient.post(`/client/centers/create/user/${userId}`, data);
+        if (!userId) throw new Error("Cannot create center: userId is missing");
+
+        // Upload image files to Cloudinary first
+        const imageFiles: File[] = data.imageFiles ?? [];
+        const uploadedUrls: string[] = [];
+        for (const file of imageFiles) {
+          const formData = new FormData();
+          formData.append("file", file);
+          try {
+            const res: any = await apiClient.post("/client/files/upload", formData, {
+              headers: { "Content-Type": "multipart/form-data" },
+            });
+            if (res?.imageUrl) uploadedUrls.push(res.imageUrl);
+          } catch (err) {
+            console.error("Image upload failed:", err);
+          }
+        }
+        const address = data.address
+          || [data.subDistrict, data.district, data.province].filter(Boolean).join(", ")
+          || "-";
+
+        const payload = {
+          centerName: data.name,
+          description: data.description || null,
+          address,
+          subDistrict: data.subDistrict || null,
+          district: data.district || null,
+          province: data.province || null,
+          googleMapLink: data.locationLink || null,
+          email: data.email || null,
+          line: data.lineId || null,
+          facebook: data.facebook || null,
+          webSite: data.website || null,
+          createdAt: null,
+          leaderFirstName: data.communityLeaderFirstName || null,
+          leaderLastName: data.communityLeaderLastName || null,
+          leaderTelephone: data.communityLeaderTelephone || null,
+          centerImages: uploadedUrls,
+          telephones: data.telephones ?? [],
+        };
+
+        const res = await apiClient.post(`/client/centers/create/user/${userId}`, payload);
+        return res;
       },
       updateCenter: async (id, data) => {
         await apiClient.patch(`/client/centers/update/${id}`, data);

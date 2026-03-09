@@ -1,8 +1,9 @@
 package com.thaiglocal.webclient.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import com.thaiglocal.webclient.dto.request.*;
@@ -14,7 +15,7 @@ import lombok.AllArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@Controller
+@RestController
 @RequestMapping("/client/users")
 @AllArgsConstructor
 public class UserController {
@@ -23,9 +24,8 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/signin")
-    public Mono<ResponseEntity<UserResponse>> signIn(@Valid @RequestBody SignInRequest request) {
+    public Mono<ResponseEntity<SignInResponse>> signIn(@Valid @RequestBody SignInRequest request) {
         return userService.signIn(request)
-            .map(s -> s.getUserResponse())
             .map(ResponseEntity::ok);
     }
 
@@ -37,8 +37,21 @@ public class UserController {
 
     @PostMapping("/signout")
     public Mono<ResponseEntity<String>> signOut() {
+        // Clear browser httpOnly cookies regardless of server response
+        ResponseCookie clearAccess = ResponseCookie.from("ACCESS_TOKEN", "")
+            .httpOnly(true).secure(false).sameSite("Lax").path("/").maxAge(0).build();
+        ResponseCookie clearRefresh = ResponseCookie.from("REFRESH_TOKEN", "")
+            .httpOnly(true).secure(false).sameSite("Lax").path("/").maxAge(0).build();
+
         return userService.signOut()
-            .map(ResponseEntity::ok);
+            .map(msg -> ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, clearAccess.toString())
+                .header(HttpHeaders.SET_COOKIE, clearRefresh.toString())
+                .body(msg))
+            .onErrorReturn(ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, clearAccess.toString())
+                .header(HttpHeaders.SET_COOKIE, clearRefresh.toString())
+                .body("Signed out"));
     }
 
     @GetMapping("/me")

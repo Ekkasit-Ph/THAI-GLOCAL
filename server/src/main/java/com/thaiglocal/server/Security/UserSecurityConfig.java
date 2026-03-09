@@ -38,9 +38,10 @@ public class UserSecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/signin", "/api/signup").permitAll()
-                .requestMatchers("/admin/users/role/**").hasRole("SYSTEM_ADMIN")
-                .requestMatchers("/admin/**").hasAnyRole("SYSTEM_ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/api/signin", "/api/signup", "/api/forget-password").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/workshops/**", "/api/centers/**", "/api/activities/**").permitAll()
+                .requestMatchers("/api/admin/users/role/**").hasRole("SYSTEM_ADMIN")
+                .requestMatchers("/api/admin/**").hasAnyRole("SYSTEM_ADMIN", "SUPER_ADMIN")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -51,8 +52,13 @@ public class UserSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:8100", "http://localhost:8081")); // URL ของ Frontend
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedOrigins(List.of(
+            "http://localhost:5173",
+            "http://localhost:8081",
+            "http://localhost:8082",
+            "http://localhost:8100"
+        )); // URL ของ Frontend
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
 

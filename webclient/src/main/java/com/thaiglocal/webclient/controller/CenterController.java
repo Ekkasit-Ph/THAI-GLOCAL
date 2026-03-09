@@ -31,60 +31,60 @@ public class CenterController {
     }
 
     @GetMapping
-    public Flux<CenterResponse> getAllCenters(@RequestHeader(value = "Cookie", required = false) String cookieHeader) {
-        return centerService.getAllCenters(cookieHeader);
+    public Flux<CenterResponse> getAllCenters(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        return centerService.getAllCenters(authHeader);
     }
 
     @GetMapping("/search")
     public Flux<CenterResponse> searchCentersByName(@RequestParam("name") String centerName,
-            @RequestHeader(value = "Cookie", required = false) String cookieHeader) {
-        return centerService.searchCentersByName(centerName, cookieHeader);
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        return centerService.searchCentersByName(centerName, authHeader);
     }
 
     @GetMapping("/admin/{userId}")
     public Flux<CenterResponse> getCentersByAdminId(@PathVariable Long userId,
-            @RequestHeader(value = "Cookie", required = false) String cookieHeader) {
-        return centerService.getCentersByAdminId(userId, cookieHeader);
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        return centerService.getCentersByAdminId(userId, authHeader);
     }
 
     @GetMapping("/{centerId}")
     public Mono<CenterResponse> getCenterById(@PathVariable Long centerId,
-            @RequestHeader(value = "Cookie", required = false) String cookieHeader) {
-        return centerService.getCenterById(centerId, cookieHeader);
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        return centerService.getCenterById(centerId, authHeader);
     }
 
     @PostMapping("/create/user/{userId}")
     public Mono<ResponseEntity<Void>> createCenter(@PathVariable Long userId, @RequestBody CenterRequest request,
-            @RequestHeader(value = "Cookie", required = false) String cookieHeader) {
-        return centerService.createCenter(userId, request, cookieHeader)
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        return centerService.createCenter(userId, request, authHeader)
                 .thenReturn(ResponseEntity.status(HttpStatus.CREATED).build());
     }
 
     @PostMapping("/{centerId}/add-admin/{userId}")
     public Mono<ResponseEntity<Void>> addCenterAdmin(@PathVariable Long centerId, @PathVariable Long userId,
-            @RequestHeader(value = "Cookie", required = false) String cookieHeader) {
-        return centerService.addCenterAdmin(centerId, userId, cookieHeader)
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        return centerService.addCenterAdmin(centerId, userId, authHeader)
                 .thenReturn(ResponseEntity.ok().build());
     }
 
     @PostMapping("/{centerId}/add-staff/{userId}")
     public Mono<ResponseEntity<Void>> addCenterStaff(@PathVariable Long centerId, @PathVariable Long userId,
-            @RequestHeader(value = "Cookie", required = false) String cookieHeader) {
-        return centerService.addCenterStaff(centerId, userId, cookieHeader)
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        return centerService.addCenterStaff(centerId, userId, authHeader)
                 .thenReturn(ResponseEntity.ok().build());
     }
 
     @PatchMapping("/update/{centerId}")
     public Mono<ResponseEntity<Void>> updateCenter(@PathVariable Long centerId, @RequestBody CenterRequest request,
-            @RequestHeader(value = "Cookie", required = false) String cookieHeader) {
-        return centerService.updateCenter(centerId, request, cookieHeader)
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        return centerService.updateCenter(centerId, request, authHeader)
                 .thenReturn(ResponseEntity.ok().build());
     }
 
     @DeleteMapping("/delete/{centerId}")
     public Mono<ResponseEntity<Void>> deleteCenter(@PathVariable Long centerId,
-            @RequestHeader(value = "Cookie", required = false) String cookieHeader) {
-        return centerService.deleteCenter(centerId, cookieHeader)
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        return centerService.deleteCenter(centerId, authHeader)
                 .thenReturn(ResponseEntity.noContent().build());
     }
 }

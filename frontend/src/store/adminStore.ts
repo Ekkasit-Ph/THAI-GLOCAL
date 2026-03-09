@@ -72,9 +72,10 @@ const useAdminStore = create<AdminState>((set) => ({
         apiClient.get(`/client/admin/registration-requests`)
       ]);
 
-      const users = usersRes.status === "fulfilled" ? usersRes.value.data : [];
-      const centers = centersRes.status === "fulfilled" ? centersRes.value.data : [];
-      const requests = requestsRes.status === "fulfilled" ? requestsRes.value.data : [];
+      // apiClient interceptor already unwraps response.data
+      const users = usersRes.status === "fulfilled" ? usersRes.value as any : [];
+      const centers = centersRes.status === "fulfilled" ? centersRes.value as any : [];
+      const requests = requestsRes.status === "fulfilled" ? requestsRes.value as any : [];
 
       set({
         users,
@@ -149,7 +150,8 @@ const useAdminStore = create<AdminState>((set) => ({
   getSystemLogs: async () => {
     try {
       const res = await apiClient.get(`/client/admin/logs`);
-      return res.data;
+      // apiClient interceptor already unwraps response.data
+      return res as any;
     } catch (error) { console.error("Logs fetch failed", error); throw error; }
   },
 }));

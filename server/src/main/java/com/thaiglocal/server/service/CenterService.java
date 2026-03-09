@@ -1,5 +1,6 @@
 package com.thaiglocal.server.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -141,7 +142,7 @@ public class CenterService {
                 .line(request.getLine())
                 .facebook(request.getFacebook())
                 .webSite(request.getWebSite())
-                .createdAt(request.getCreatedAt())
+                .createdAt(request.getCreatedAt() != null ? request.getCreatedAt() : LocalDateTime.now())
                 .leaderFirstName(request.getLeaderFirstName())
                 .leaderLastName(request.getLeaderLastName())
                 .leaderTelephone(request.getLeaderTelephone())

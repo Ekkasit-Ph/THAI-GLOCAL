@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router";
 import {
   Clock,
@@ -15,7 +15,7 @@ import {
   X,
   PartyPopper,
 } from "lucide-react";
-import { activities, centers, Session } from "../data/mockData";
+import useDataStore, { Session } from "../store/dataStore";
 import useBookingStore from "../store/bookingStore";
 import { toast } from "sonner";
 import { ImageCarousel } from "../components/ImageCarousel";
@@ -419,6 +419,10 @@ function ActivityDetailModal({
 
 export function WorkshopDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { activities, centers, fetchData } = useDataStore();
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
   const activity = activities.find((a) => a.id === id);
   const [detailSession, setDetailSession] = useState<Session | null>(null);
   const [bookingSession, setBookingSession] = useState<Session | null>(null);
