@@ -7,6 +7,7 @@ import {
 import useAuthStore from "../store/authStore";
 import useMyCenterStore, { UserCenter, UserWorkshop } from "../store/myCenterStore";
 import { ImageCarousel } from "../components/ImageCarousel";
+import { apiClient } from "../api/axiosClient";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -112,6 +113,7 @@ function CenterForm({ initial, onSave, onCancel }: {
   onCancel?: () => void;
 }) {
   const [form, setForm] = useState({ ...EMPTY_CENTER, ...initial });
+  const [uploading, setUploading] = useState(false);
   const set = (k: keyof typeof EMPTY_CENTER, v: string | string[]) => setForm((f) => ({ ...f, [k]: v }));
 
   return (
@@ -202,26 +204,33 @@ function CenterForm({ initial, onSave, onCancel }: {
             type="file"
             accept="image/*"
             multiple
-            disabled={form.images.length >= 3}
+            disabled={form.images.length >= 3 || uploading}
             onChange={async (e) => {
               const files = Array.from(e.target.files || []);
               if (files.length === 0) return;
-              
-              const newImagesInfo = await Promise.all(
-                files.slice(0, 3 - form.images.length).map((file) => {
-                  return new Promise<string>((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result as string);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                  });
-                })
-              );
-              
-              set("images", [...form.images, ...newImagesInfo]);
+              e.target.value = "";
+              setUploading(true);
+              try {
+                const uploadedUrls = await Promise.all(
+                  files.slice(0, 3 - form.images.length).map(async (file) => {
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    const res = await apiClient.post("/api/files/upload", formData, {
+                      headers: { "Content-Type": "multipart/form-data" },
+                    }) as any;
+                    return res.imageUrl as string;
+                  })
+                );
+                set("images", [...form.images, ...uploadedUrls]);
+              } catch {
+                alert("Image upload failed. Please try again.");
+              } finally {
+                setUploading(false);
+              }
             }}
-            className="block w-full text-sm text-stone-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 transition-colors cursor-pointer"
+            className="block w-full text-sm text-stone-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           />
+          {uploading && <p className="text-xs text-amber-600 mt-2 animate-pulse">Uploading images…</p>}
           {form.images.length > 0 && (
             <div className="flex gap-4 mt-4 flex-wrap">
               {form.images.map((img, i) => (
@@ -238,12 +247,12 @@ function CenterForm({ initial, onSave, onCancel }: {
               ))}
             </div>
           )}
-          {form.images.length !== 3 && <p className="text-xs text-red-500 mt-2">Please upload exactly 3 images before saving.</p>}
+          {form.images.length !== 3 && !uploading && <p className="text-xs text-red-500 mt-2">Please upload exactly 3 images before saving.</p>}
         </div>
       </div>
 
       <div className="flex gap-3 pt-4 border-t border-stone-100 mt-2">
-        <button type="submit" disabled={form.telephones.length === 0 || form.images.length !== 3} className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium shadow-sm transition-colors">
+        <button type="submit" disabled={form.telephones.length === 0 || form.images.length !== 3 || uploading} className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium shadow-sm transition-colors">
           <Save className="w-4 h-4" /> Save Center
         </button>
         {onCancel && (
@@ -277,6 +286,7 @@ function WorkshopForm({ initial, onSave, onCancel }: {
 }) {
   const [form, setForm] = useState({ ...EMPTY_ACT, ...initial });
   const [errorMessage, setErrorMessage] = useState("");
+  const [uploading, setUploading] = useState(false);
   const set = <K extends keyof typeof EMPTY_ACT>(k: K, v: (typeof EMPTY_ACT)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
@@ -464,26 +474,33 @@ function WorkshopForm({ initial, onSave, onCancel }: {
             type="file"
             accept="image/*"
             multiple
-            disabled={form.images.length >= 3}
+            disabled={form.images.length >= 3 || uploading}
             onChange={async (e) => {
               const files = Array.from(e.target.files || []);
               if (files.length === 0) return;
-              
-              const newImagesInfo = await Promise.all(
-                files.slice(0, 3 - form.images.length).map((file) => {
-                  return new Promise<string>((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result as string);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                  });
-                })
-              );
-              
-              set("images", [...form.images, ...newImagesInfo]);
+              e.target.value = "";
+              setUploading(true);
+              try {
+                const uploadedUrls = await Promise.all(
+                  files.slice(0, 3 - form.images.length).map(async (file) => {
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    const res = await apiClient.post("/api/files/upload", formData, {
+                      headers: { "Content-Type": "multipart/form-data" },
+                    }) as any;
+                    return res.imageUrl as string;
+                  })
+                );
+                set("images", [...form.images, ...uploadedUrls]);
+              } catch {
+                alert("Image upload failed. Please try again.");
+              } finally {
+                setUploading(false);
+              }
             }}
-            className="block w-full text-sm text-stone-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 transition-colors cursor-pointer"
+            className="block w-full text-sm text-stone-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           />
+          {uploading && <p className="text-xs text-amber-600 mt-2 animate-pulse">Uploading images…</p>}
           {form.images.length > 0 && (
             <div className="flex gap-4 mt-4 flex-wrap">
               {form.images.map((img, i) => (
@@ -500,12 +517,12 @@ function WorkshopForm({ initial, onSave, onCancel }: {
               ))}
             </div>
           )}
-          {form.images.length !== 3 && <p className="text-xs text-red-500 mt-2">Please upload exactly 3 images before saving.</p>}
+          {form.images.length !== 3 && !uploading && <p className="text-xs text-red-500 mt-2">Please upload exactly 3 images before saving.</p>}
         </div>
       </div>
 
       <div className="flex gap-3 pt-2">
-        <button type="submit" disabled={form.images.length !== 3} className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium shadow-sm transition-colors">
+        <button type="submit" disabled={form.images.length !== 3 || uploading} className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium shadow-sm transition-colors">
           <Save className="w-4 h-4" /> Save Workshop
         </button>
         <button type="button" onClick={onCancel} className="px-5 py-2.5 rounded-xl border border-stone-200 text-stone-600 hover:bg-stone-50 text-sm transition-colors">
