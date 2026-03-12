@@ -31,26 +31,4 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        
-        // อนุญาต Vercel (ห้ามมี / ปิดท้าย)
-        configuration.setAllowedOrigins(Arrays.asList("https://thai-glocal-4fhx.vercel.app"));
-        
-        // อนุญาต Method ทุกอย่างที่ต้องใช้
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        
-        // อนุญาต Headers ทุกอย่าง
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        
-        // สำคัญ: อนุญาตให้ส่ง Cookie ได้ (สัมพันธ์กับ WebClientConfig ของคุณ)
-        configuration.setAllowCredentials(true);
-        
-        configuration.setMaxAge(3600L);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
 }
