@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import com.thaiglocal.server.dto.request.CenterRequest;
 import com.thaiglocal.server.dto.response.CenterResponse;
 import com.thaiglocal.server.dto.response.StaffResponse;
-import com.thaiglocal.server.exception.InvalidRoleException;
 import com.thaiglocal.server.exception.NotFoundException;
 import com.thaiglocal.server.model.Center;
 import com.thaiglocal.server.model.CenterBelongUser;
