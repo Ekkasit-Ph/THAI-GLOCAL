@@ -19,13 +19,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // 1. เปิดใช้งาน CORS และดึง Config จาก Bean ด้านล่าง
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            // 2. ปิด CSRF เพราะเราใช้ API ข้ามโดเมน
+            // 1. ปิด CORS ของ Security ทิ้งไปเลย (เพราะเราใช้ CorsConfig.java จัดการแทนแล้ว)
+            .cors(cors -> cors.disable()) 
+            // 2. ปิด CSRF ตามเดิม
             .csrf(csrf -> csrf.disable())
-            // 3. ปิด Session เพราะเราจะส่ง Cookie/Token เอง (Stateless)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            // 4. อนุญาตให้เข้าถึงทุก Path ได้โดยไม่ต้อง Login (ให้ด่าน Server หลักเป็นคนตรวจแทน)
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().permitAll()
             );
