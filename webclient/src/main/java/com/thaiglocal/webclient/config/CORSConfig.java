@@ -17,10 +17,10 @@ public class CORSConfig {
         
         // 1. อนุญาต URL หน้าบ้าน (Vercel) - ใส่ URL ของคุณที่นี่
         // แนะนำ: ถ้ายังเทสต์อยู่และอยากให้ผ่านชัวร์ๆ ให้ใช้ "*" ไปก่อนได้ครับ
-        corsConfig.setAllowedOrigins(Arrays.asList("https://thai-glocal-4fhx.vercel.app/"));
+        corsConfig.setAllowedOrigins(Arrays.asList("https://thai-glocal-4fhx.vercel.app"));
         
         // 2. อนุญาต Method ที่จำเป็นสำหรับการ SignUp/Login
-        corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         
         // 3. อนุญาต Headers ทุกอย่าง (เช่น Content-Type, Authorization)
         corsConfig.addAllowedHeader("*");
@@ -30,7 +30,6 @@ public class CORSConfig {
         
         // 5. อนุญาตให้ส่ง Cookie หรือ Header พิเศษได้
         corsConfig.setAllowCredentials(true);
-
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         // ใช้ "/**" เพื่อให้มีผลกับทุก Endpoint ใน webClient
         source.registerCorsConfiguration("/**", corsConfig);
