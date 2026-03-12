@@ -15,8 +15,9 @@ public class WebClientConfig {
     @Bean
     public WebClient webClient() {
         return WebClient.builder()
-            .baseUrl("http://srv-d6pcpk9j16oc7391jang:10000")
+            .baseUrl("https://thai-glocal.onrender.com")
             .defaultHeader("Content-Type", "application/json")
+            .defaultHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
             .filter((request, next) -> {
                 // ดึง Cookie จาก Incoming Request แล้วส่งต่อไปยัง Server
                 ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
