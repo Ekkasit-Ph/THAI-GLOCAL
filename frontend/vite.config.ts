@@ -23,7 +23,7 @@ export default defineConfig({
         secure: false,
       },
       '/client': {
-        target: 'http://localhost:8080',
+        target: 'https://thai-glocal-webclient.onrender.com',
         changeOrigin: true,
         secure: false,
       },
