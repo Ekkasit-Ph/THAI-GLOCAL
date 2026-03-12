@@ -94,6 +94,27 @@ public class ActivityRegisterController {
         return ResponseEntity.ok().build();
     }
 
+    // Method: PATCH /api/activity-registers/{registerId}/request-cancel
+    @PatchMapping("/{registerId}/request-cancel")
+    public ResponseEntity<Void> requestCancelRegister(@PathVariable Long registerId) {
+        activityRegisterService.requestCancelActivityRegister(registerId);
+        return ResponseEntity.ok().build();
+    }
+
+    // Method: PATCH /api/activity-registers/{registerId}/approve-cancel
+    @PatchMapping("/{registerId}/approve-cancel")
+    public ResponseEntity<Void> approveCancelRegister(@PathVariable Long registerId) {
+        activityRegisterService.approveCancelActivityRegister(registerId);
+        return ResponseEntity.ok().build();
+    }
+
+    // Method: PATCH /api/activity-registers/{registerId}/reject-cancel
+    @PatchMapping("/{registerId}/reject-cancel")
+    public ResponseEntity<Void> rejectCancelRegister(@PathVariable Long registerId) {
+        activityRegisterService.rejectCancelActivityRegister(registerId);
+        return ResponseEntity.ok().build();
+    }
+
     // Method: DELETE /api/activity-registers/delete/{registerId}
     @DeleteMapping("/delete/{registerId}")
     public ResponseEntity<Void> deleteRegister(@PathVariable Long registerId) {

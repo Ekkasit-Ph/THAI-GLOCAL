@@ -98,6 +98,30 @@ public class ActivityRegisterController {
                 .thenReturn(ResponseEntity.ok().build());
     }
 
+    @PatchMapping("/{registerId}/request-cancel")
+    public Mono<ResponseEntity<Void>> requestCancel(
+            @PathVariable Long registerId,
+            @RequestHeader(value = "Cookie", required = false) String cookieHeader) {
+        return activityRegisterService.requestCancel(registerId, cookieHeader)
+                .thenReturn(ResponseEntity.ok().build());
+    }
+
+    @PatchMapping("/{registerId}/approve-cancel")
+    public Mono<ResponseEntity<Void>> approveCancel(
+            @PathVariable Long registerId,
+            @RequestHeader(value = "Cookie", required = false) String cookieHeader) {
+        return activityRegisterService.approveCancel(registerId, cookieHeader)
+                .thenReturn(ResponseEntity.ok().build());
+    }
+
+    @PatchMapping("/{registerId}/reject-cancel")
+    public Mono<ResponseEntity<Void>> rejectCancel(
+            @PathVariable Long registerId,
+            @RequestHeader(value = "Cookie", required = false) String cookieHeader) {
+        return activityRegisterService.rejectCancel(registerId, cookieHeader)
+                .thenReturn(ResponseEntity.ok().build());
+    }
+
     @DeleteMapping("/delete/{registerId}")
     public Mono<ResponseEntity<Void>> delete(
             @PathVariable Long registerId,

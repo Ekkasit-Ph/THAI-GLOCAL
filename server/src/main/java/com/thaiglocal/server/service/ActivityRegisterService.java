@@ -144,7 +144,7 @@ public class ActivityRegisterService {
         ActivityRegister activityRegister = activityRegisterRepository.findById(activityRegisterId)
                 .orElseThrow(() -> new RuntimeException("Activity register not found with id: " + activityRegisterId));
     
-        activityRegister.setStatus(ActivityRegisterStatus.CANCELLED);
+        activityRegister.setStatus(ActivityRegisterStatus.CANCELLATION_REQUESTED);
         activityRegisterRepository.save(activityRegister);
     }
 
@@ -171,6 +171,45 @@ public class ActivityRegisterService {
                 .orElseThrow(() -> new RuntimeException("Activity register not found with id: " + activityRegisterId));
 
         activityRegister.setStatus(ActivityRegisterStatus.REJECTED);
+        activityRegisterRepository.save(activityRegister);
+    }
+
+    @Transactional
+    public void requestCancelActivityRegister(Long activityRegisterId) {
+        ActivityRegister activityRegister = activityRegisterRepository.findById(activityRegisterId)
+                .orElseThrow(() -> new RuntimeException("Activity register not found with id: " + activityRegisterId));
+
+        if (activityRegister.getStatus() != ActivityRegisterStatus.CONFIRMED) {
+            throw new RuntimeException("Can only request cancellation for confirmed bookings");
+        }
+
+        activityRegister.setStatus(ActivityRegisterStatus.CANCELLATION_REQUESTED);
+        activityRegisterRepository.save(activityRegister);
+    }
+
+    @Transactional
+    public void approveCancelActivityRegister(Long activityRegisterId) {
+        ActivityRegister activityRegister = activityRegisterRepository.findById(activityRegisterId)
+                .orElseThrow(() -> new RuntimeException("Activity register not found with id: " + activityRegisterId));
+
+        if (activityRegister.getStatus() != ActivityRegisterStatus.CANCELLATION_REQUESTED) {
+            throw new RuntimeException("Can only approve cancellation for cancellation_requested bookings");
+        }
+
+        activityRegister.setStatus(ActivityRegisterStatus.CANCELLED);
+        activityRegisterRepository.save(activityRegister);
+    }
+
+    @Transactional
+    public void rejectCancelActivityRegister(Long activityRegisterId) {
+        ActivityRegister activityRegister = activityRegisterRepository.findById(activityRegisterId)
+                .orElseThrow(() -> new RuntimeException("Activity register not found with id: " + activityRegisterId));
+
+        if (activityRegister.getStatus() != ActivityRegisterStatus.CANCELLATION_REQUESTED) {
+            throw new RuntimeException("Can only reject cancellation for cancellation_requested bookings");
+        }
+
+        activityRegister.setStatus(ActivityRegisterStatus.CANCELLATION_REJECTED);
         activityRegisterRepository.save(activityRegister);
     }
 }

@@ -155,6 +155,45 @@ public class ActivityRegisterService {
                 .bodyToMono(Void.class);
     }
 
+    public Mono<Void> requestCancel(Long registerId, String cookieHeader) {
+        return activityRegisterWebClient
+                .patch()
+                .uri("/api/activity-registers/{registerId}/request-cancel", registerId)
+                .headers(h -> addCookie(h, cookieHeader))
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError,
+                        cr -> Mono.error(new RuntimeException("Client error during request cancel")))
+                .onStatus(HttpStatusCode::is5xxServerError,
+                        cr -> Mono.error(new RuntimeException("Server error during request cancel")))
+                .bodyToMono(Void.class);
+    }
+
+    public Mono<Void> approveCancel(Long registerId, String cookieHeader) {
+        return activityRegisterWebClient
+                .patch()
+                .uri("/api/activity-registers/{registerId}/approve-cancel", registerId)
+                .headers(h -> addCookie(h, cookieHeader))
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError,
+                        cr -> Mono.error(new RuntimeException("Client error during approve cancel")))
+                .onStatus(HttpStatusCode::is5xxServerError,
+                        cr -> Mono.error(new RuntimeException("Server error during approve cancel")))
+                .bodyToMono(Void.class);
+    }
+
+    public Mono<Void> rejectCancel(Long registerId, String cookieHeader) {
+        return activityRegisterWebClient
+                .patch()
+                .uri("/api/activity-registers/{registerId}/reject-cancel", registerId)
+                .headers(h -> addCookie(h, cookieHeader))
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError,
+                        cr -> Mono.error(new RuntimeException("Client error during reject cancel")))
+                .onStatus(HttpStatusCode::is5xxServerError,
+                        cr -> Mono.error(new RuntimeException("Server error during reject cancel")))
+                .bodyToMono(Void.class);
+    }
+
     private void addCookie(HttpHeaders headers, String cookieHeader) {
         if (cookieHeader != null && !cookieHeader.isBlank()) {
             headers.add("Cookie", cookieHeader);

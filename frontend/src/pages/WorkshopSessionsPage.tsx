@@ -409,13 +409,25 @@ export function WorkshopSessionsPage() {
                   </div>
                   <div className="bg-stone-50 p-2.5 rounded-lg col-span-2">
                     <p className="text-stone-400 text-xs">Status</p>
-                    <p className={`font-semibold text-sm mt-1 ${
+                    <p className={`font-semibold text-sm mt-1 flex items-center gap-1.5 ${
                       selectedBooking.status === 'pending' ? 'text-amber-600' :
+                      selectedBooking.status === 'approved' ? 'text-blue-600' :
                       selectedBooking.status === 'confirmed' ? 'text-green-600' :
                       selectedBooking.status === 'rejected' ? 'text-red-600' :
+                      selectedBooking.status === 'cancellation_requested' ? 'text-orange-600' :
+                      selectedBooking.status === 'cancelled' ? 'text-slate-600' :
                       'text-stone-600'
                     }`}>
-                      {selectedBooking.status?.toUpperCase()}
+                      <span>
+                        {selectedBooking.status === "cancellation_requested" ? "Cancel Requested" :
+                         selectedBooking.status === "cancellation_rejected" ? "✓ Cancel Declined" :
+                         selectedBooking.status === "pending" ? "Pending" :
+                         selectedBooking.status === "approved" ? "✓ Approved" :
+                         selectedBooking.status === "confirmed" ? "✓ Confirmed" :
+                         selectedBooking.status === "rejected" ? "✗ Rejected" :
+                         selectedBooking.status === "cancelled" ? "✗ Cancelled" :
+                         selectedBooking.status.charAt(0).toUpperCase() + selectedBooking.status.slice(1)}
+                      </span>
                     </p>
                   </div>
                 </div>
@@ -504,7 +516,7 @@ export function WorkshopSessionsPage() {
             </div>
             
             {/* Quick Stats */}
-            <div className="grid grid-cols-3 gap-3 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
               <div className="bg-amber-50 border border-amber-100 p-3 rounded-2xl flex flex-col items-center justify-center">
                 <span className="text-2xl font-bold text-amber-600">{sessionBookings.filter((b: any) => b.status === 'pending').length}</span>
                 <span className="text-xs font-bold text-amber-800 uppercase mt-1">Pending</span>
@@ -513,13 +525,13 @@ export function WorkshopSessionsPage() {
                 <span className="text-2xl font-bold text-green-600">{sessionBookings.filter((b: any) => b.status === 'confirmed').length}</span>
                 <span className="text-xs font-bold text-green-800 uppercase mt-1">Confirmed</span>
               </div>
-              {/* <div className="bg-blue-50 border border-blue-100 p-3 rounded-2xl flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold text-blue-600">{sessionBookings.filter((b: any) => b.status === 'complete').length}</span>
-                <span className="text-xs font-bold text-blue-800 uppercase mt-1">COMPLETE</span>
-              </div> */}
               <div className="bg-red-50 border border-red-100 p-3 rounded-2xl flex flex-col items-center justify-center">
                 <span className="text-2xl font-bold text-red-600">{sessionBookings.filter((b: any) => b.status === 'rejected').length}</span>
-                <span className="text-xs font-bold text-red-800 uppercase mt-1">REJECTED</span>
+                <span className="text-xs font-bold text-red-800 uppercase mt-1">Rejected</span>
+              </div>
+              <div className="bg-slate-50 border border-slate-100 p-3 rounded-2xl flex flex-col items-center justify-center">
+                <span className="text-2xl font-bold text-slate-600">{sessionBookings.filter((b: any) => b.status === 'cancelled').length}</span>
+                <span className="text-xs font-bold text-slate-800 uppercase mt-1">Cancelled</span>
               </div>
             </div>
 
@@ -551,9 +563,19 @@ export function WorkshopSessionsPage() {
                           ${req.status === 'pending' ? 'bg-amber-100 text-amber-800' :
                             req.status === 'approved' ? 'bg-blue-100 text-blue-800' :
                             req.status === 'cancellation_requested' ? 'bg-orange-100 text-orange-800' :
+                            req.status === 'cancellation_rejected' ? 'bg-stone-100 text-stone-800' :
                             req.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                            'bg-red-100 text-red-800'}`}>
-                          {req.status === "cancellation_requested" ? "Cancel Requested" : req.status}
+                            req.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                            req.status === 'cancelled' ? 'bg-slate-100 text-slate-800' :
+                            'bg-stone-100 text-stone-800'}`}>
+                          {req.status === "cancellation_requested" ? "Cancel Requested" :
+                           req.status === "cancellation_rejected" ? "✓ Cancel Declined" :
+                           req.status === "pending" ? "Pending" :
+                           req.status === "approved" ? "✓ Approved" :
+                           req.status === "confirmed" ? "✓ Confirmed" :
+                           req.status === "rejected" ? "✗ Rejected" :
+                           req.status === "cancelled" ? "✗ Cancelled" :
+                           req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                         </span>
                       </div>
                       
@@ -581,6 +603,11 @@ export function WorkshopSessionsPage() {
                             onClick={async () => {
                               try {
                                 await store.updateBookingStatus(req.id, "confirmed");
+                                // Refresh data from store
+                                const ownerId = useAuthStore.getState().user?.id;
+                                if (ownerId) {
+                                  await store.fetchMyCenterData(String(ownerId));
+                                }
                               } catch (e) {
                                 setErrorMessage("Failed to approve booking. Please try again.");
                               }
@@ -593,6 +620,11 @@ export function WorkshopSessionsPage() {
                             onClick={async () => {
                               try {
                                 await store.updateBookingStatus(req.id, "rejected");
+                                // Refresh data from store
+                                const ownerId = useAuthStore.getState().user?.id;
+                                if (ownerId) {
+                                  await store.fetchMyCenterData(String(ownerId));
+                                }
                               } catch (e) {
                                 setErrorMessage("Failed to reject booking. Please try again.");
                               }
@@ -608,6 +640,11 @@ export function WorkshopSessionsPage() {
                           onClick={async () => {
                             try {
                               await store.updateBookingStatus(req.id, "confirmed");
+                              // Refresh data from store
+                              const ownerId = useAuthStore.getState().user?.id;
+                              if (ownerId) {
+                                await store.fetchMyCenterData(String(ownerId));
+                              }
                             } catch (e) {
                               setErrorMessage("Failed to confirm booking. Please try again.");
                             }
@@ -623,6 +660,11 @@ export function WorkshopSessionsPage() {
                           onClick={async () => {
                             try {
                               await store.approveCancelBooking(req.id);
+                              // Refresh data from store
+                              const ownerId = useAuthStore.getState().user?.id;
+                              if (ownerId) {
+                                await store.fetchMyCenterData(String(ownerId));
+                              }
                             } catch (e) {
                               setErrorMessage("Failed to approve cancellation. Please try again.");
                             }
@@ -632,24 +674,24 @@ export function WorkshopSessionsPage() {
                           <CheckCircle2 className="w-4 h-4" /> Approve Cancellation
                         </button>
                       )}
-                      {req.status === "cancellation_requested" && req.cancelRequestedBy === "center" && (
-                         <span className="text-sm text-stone-500 italic px-4">Waiting for user...</span>
-                      )}
                       {(req.status === "confirmed") && (
                         <button 
                           onClick={async () => {
                             try {
-                              if (req.status === "confirmed") {
-                                await store.requestCancelBooking(req.id);
-                                // alert("Cancellation requested. Waiting for user's approval.");
+                              await store.updateBookingStatus(req.id, "request_cancel");
+                              // Refresh data from store
+                              const ownerId = useAuthStore.getState().user?.id;
+                              if (ownerId) {
+                                await store.fetchMyCenterData(String(ownerId));
                               }
+                              setErrorMessage(null);
                             } catch (e) {
-                              setErrorMessage("Failed to cancel booking. Please try again.");
+                              setErrorMessage("Failed to request cancellation. Please try again.");
                             }
                           }} 
                           className="px-4 py-2 hover:bg-stone-100 text-stone-500 hover:text-stone-800 rounded-xl text-sm font-medium transition-colors"
                         >
-                          Cancel Booking
+                          Request Cancel
                         </button>
                       )}
                     </div>

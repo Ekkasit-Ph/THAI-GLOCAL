@@ -284,41 +284,21 @@ const useMyCenterStore = create<MyCenterState>()(
 
       updateBookingStatus: async (id, status) => {
         try {
-          const statusMap: Record<string, string> = {
-            "approved": "confirmed",
-            "confirmed": "confirmed",
-            "rejected": "rejected",
-            "cancelled": "cancelled",
-            "completed": "completed",
-          };
-          
-          const mappedStatus = statusMap[status] || status;
-          
-          // Send to webclient API
-          if (mappedStatus === "confirmed") {
+          if (status === "confirmed") {
             await apiClient.patch(`/client/activity-registers/${id}/confirm`);
-          } else if (mappedStatus === "rejected") {
+          } else if (status === "rejected") {
             await apiClient.patch(`/client/activity-registers/${id}/reject`);
-          } else if (mappedStatus === "cancelled") {
-            await apiClient.patch(`/client/activity-registers/${id}/cancel`);
-          } else if (mappedStatus === "completed") {
+          } else if (status === "request_cancel") {
+            await apiClient.patch(`/client/activity-registers/${id}/request-cancel`);
+          } else if (status === "approve_cancel") {
+            await apiClient.patch(`/client/activity-registers/${id}/approve-cancel`);
+          } else if (status === "reject_cancel") {
+            await apiClient.patch(`/client/activity-registers/${id}/reject-cancel`);
+          } else if (status === "completed") {
             await apiClient.patch(`/client/activity-registers/${id}/complete`);
           }
           
-          console.log("Booking status updated, refreshing data...");
-          
-          // 🔑 IMPORTANT: Refresh data after successful update
-          await new Promise(resolve => setTimeout(resolve, 500)); // Wait for backend
-          
-          set((state) => {
-            // Update local myBookings immediately
-            const updated = state.myBookings.map((b: any) =>
-              b.id === String(id) ? { ...b, status: mappedStatus } : b
-            );
-            return { myBookings: updated };
-          });
-          
-          // Then fetch fresh data from server
+          await new Promise(resolve => setTimeout(resolve, 500));
           const ownerId = localStorage.getItem("userId");
           if (ownerId) {
             const state = useMyCenterStore.getState();

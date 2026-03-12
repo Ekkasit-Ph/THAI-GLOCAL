@@ -9,10 +9,12 @@ import {
   XCircle,
   AlertCircle,
   Trash2,
+  X
 } from "lucide-react";
 import useBookingStore from "../store/bookingStore";
 import useAuthStore from "../store/authStore";
 import useDataStore from "../store/dataStore";
+import useMyCenterStore from "../store/myCenterStore";
 
 function normalizeStatus(s: any): string {
   if (!s) return "pending";
@@ -23,6 +25,7 @@ function getStatusIcon(status: string) {
   if (status === "confirmed") return <CheckCircle2 className="w-4 h-4 text-green-500" />;
   if (status === "cancelled") return <XCircle className="w-4 h-4 text-red-400" />;
   if (status === "completed") return <CheckCircle2 className="w-4 h-4 text-blue-500" />;
+  if (status === "cancellation_requested") return <AlertCircle className="w-4 h-4 text-orange-400" />;
   return <AlertCircle className="w-4 h-4 text-amber-400" />;
 }
 
@@ -30,6 +33,7 @@ function getStatusClass(status: string) {
   if (status === "confirmed") return "bg-green-50 text-green-700 border-green-200";
   if (status === "cancelled") return "bg-red-50 text-red-600 border-red-200";
   if (status === "completed") return "bg-blue-50 text-blue-700 border-blue-200";
+  if (status === "cancellation_requested") return "bg-orange-50 text-orange-700 border-orange-200";
   return "bg-amber-50 text-amber-700 border-amber-200";
 }
 
@@ -46,8 +50,11 @@ export function MyBookingsPage() {
   const cancelBooking = useBookingStore((s) => s.cancelBooking);
   const requestCancellation = useBookingStore((s) => s.requestCancelBooking);
   const { workshops, centers, fetchData } = useDataStore();
+  const store = useMyCenterStore();
   const [tab, setTab] = useState<"upcoming" | "all">("upcoming");
   const [cancelId, setCancelId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   if (!user) return <Navigate to="/login" state={{ from: "/my-bookings" }} replace />;
@@ -96,7 +103,7 @@ export function MyBookingsPage() {
 
   const displayed =
     tab === "upcoming"
-      ? enriched.filter((b) => b.status !== "cancelled" && b.status !== "completed")
+      ? enriched.filter((b) => b.status !== "completed")  // ← เปลี่ยนให้เก็บ cancelled ไว้
       : enriched;
 
   const confirmCancel = () => {
@@ -106,9 +113,61 @@ export function MyBookingsPage() {
     }
   };
 
+  const handleApproveCancel = async (bookingId: string) => {
+    try {
+      setLoadingId(bookingId);
+      await store.updateBookingStatus(bookingId, "approve_cancel");
+      setErrorMessage(null);
+      // Refresh bookings
+      if (user) {
+        await fetchUserBookings(String(user.id));
+      }
+      // Show success message
+      alert("✓ Cancellation approved successfully");
+    } catch (e) {
+      setErrorMessage("Failed to approve cancellation. Please try again.");
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const handleRejectCancel = async (bookingId: string) => {
+    try {
+      setLoadingId(bookingId);
+      await store.updateBookingStatus(bookingId, "reject_cancel");
+      setErrorMessage(null);
+      // Refresh bookings
+      if (user) {
+        await fetchUserBookings(String(user.id));
+      }
+      // Show notification dialog
+      alert("✓ Cancellation rejected!\n\nWe've notified the center admin. If the user has any issues, they can contact the center admin directly.");
+    } catch (e) {
+      setErrorMessage("Failed to reject cancellation. Please try again.");
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-stone-50 pt-24 pb-16">
       <div className="max-w-3xl mx-auto px-4">
+        {/* Error Message */}
+        {errorMessage && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-red-700 text-sm font-medium">{errorMessage}</p>
+            </div>
+            <button 
+              onClick={() => setErrorMessage(null)}
+              className="text-red-400 hover:text-red-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-stone-900 mb-1" style={{ fontSize: "clamp(1.5rem,3vw,2rem)", fontWeight: 700 }}>
@@ -161,97 +220,138 @@ export function MyBookingsPage() {
                 className={`bg-white rounded-2xl border overflow-hidden transition-all cursor-pointer hover:shadow-lg ${
                   booking.status === "cancelled" ? "opacity-60 border-stone-100" : "border-stone-100 hover:shadow-md"
                 }`}
-                onClick={() => navigate(`/workshops/${booking.activityId}`)}
               >
-                <div className="flex">
+                <div className="flex flex-col sm:flex-row">
                   {/* Image */}
                   {booking.images.length > 0 && (
-                    <div className="w-28 sm:w-36 shrink-0">
+                    <div className="w-full sm:w-28 sm:shrink-0">
                       <img
                         src={booking.images[0]}
                         alt={booking.activityName}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover cursor-pointer"
+                        onClick={() => navigate(`/workshops/${booking.activityId}`)}
                       />
                     </div>
                   )}
 
-                  <div className="flex-1 p-4">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className="text-stone-900 font-semibold truncate"
-                          style={{ fontSize: "0.95rem" }}
+                  <div className="flex-1 p-4 flex flex-col gap-4">
+                    <div 
+                      onClick={() => navigate(`/workshops/${booking.activityId}`)}
+                      className="cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className="text-stone-900 font-semibold truncate"
+                            style={{ fontSize: "0.95rem" }}
+                          >
+                            {booking.activityName}
+                          </p>
+                          <p className="text-stone-400" style={{ fontSize: "0.75rem" }}>
+                            Booking #{booking.id}
+                          </p>
+                        </div>
+                        <span
+                          className={`flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-medium shrink-0 ${getStatusClass(
+                            booking.status
+                          )}`}
                         >
-                          {booking.activityName}
-                        </p>
-                        <p className="text-stone-400" style={{ fontSize: "0.75rem" }}>
-                          Booking #{booking.id}
-                        </p>
-                      </div>
-                      <span
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-medium shrink-0 ${getStatusClass(
-                          booking.status
-                        )}`}
-                      >
-                        {getStatusIcon(booking.status)}
-                        {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col gap-1 mb-3">
-                      {booking.date && (
-                        <div className="flex items-center gap-1.5 text-stone-500" style={{ fontSize: "0.8rem" }}>
-                          <Calendar className="w-3.5 h-3.5 text-amber-500" />
-                          {new Date(booking.date).toLocaleDateString("en-US", {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                          {booking.time && ` · ${booking.time}`}
-                        </div>
-                      )}
-                      {booking.center && (
-                        <div className="flex items-center gap-1.5 text-stone-500" style={{ fontSize: "0.8rem" }}>
-                          <MapPin className="w-3.5 h-3.5 text-amber-500" />
-                          {booking.center.name}, {booking.center.location}
-                        </div>
-                      )}
-                      <div className="flex items-center gap-4" style={{ fontSize: "0.8rem" }}>
-                        <span className="flex items-center gap-1 text-stone-500">
-                          <Users className="w-3.5 h-3.5 text-amber-500" />
-                          {booking.participants} participant{booking.participants > 1 ? "s" : ""}
+                          {getStatusIcon(booking.status)}
+                          {booking.status === "cancellation_requested" 
+                            ? "Cancel Requested" 
+                            : booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                         </span>
-                        {booking.duration && (
-                          <span className="flex items-center gap-1 text-stone-500">
-                            <Clock className="w-3.5 h-3.5 text-amber-500" />
-                            {booking.duration}
-                          </span>
+                      </div>
+
+                      <div className="flex flex-col gap-1 mb-3">
+                        {booking.date && (
+                          <div className="flex items-center gap-1.5 text-stone-500" style={{ fontSize: "0.8rem" }}>
+                            <Calendar className="w-3.5 h-3.5 text-amber-500" />
+                            {new Date(booking.date).toLocaleDateString("en-US", {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                            {booking.time && ` · ${booking.time}`}
+                          </div>
                         )}
+                        {booking.center && (
+                          <div className="flex items-center gap-1.5 text-stone-500" style={{ fontSize: "0.8rem" }}>
+                            <MapPin className="w-3.5 h-3.5 text-amber-500" />
+                            {booking.center.name}, {booking.center.location}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-4" style={{ fontSize: "0.8rem" }}>
+                          <span className="flex items-center gap-1 text-stone-500">
+                            <Users className="w-3.5 h-3.5 text-amber-500" />
+                            {booking.participants} participant{booking.participants > 1 ? "s" : ""}
+                          </span>
+                          {booking.duration && (
+                            <span className="flex items-center gap-1 text-stone-500">
+                              <Clock className="w-3.5 h-3.5 text-amber-500" />
+                              {booking.duration}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    {/* Action Buttons */}
+                    <div className="flex items-center justify-between border-t border-stone-100 pt-3 gap-2">
                       <span className="text-amber-700 font-semibold" style={{ fontSize: "0.95rem" }}>
                         ฿{booking.totalPrice.toLocaleString()}
                       </span>
-                      {booking.status !== "cancelled" && booking.status !== "completed" && (
-                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                          {!booking.canCancel && (
-                            <span className="text-xs text-red-500 mr-2">Too late to cancel</span>
-                          )}
-                          <button
-                            onClick={() => setCancelId(booking.id)}
-                            disabled={!booking.canCancel}
-                            className={`flex items-center gap-1 transition-colors ${
-                              booking.canCancel ? "text-red-400 hover:text-red-600" : "text-stone-300 cursor-not-allowed"
-                            }`}
-                            style={{ fontSize: "0.78rem" }}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" /> Cancel
-                          </button>
-                        </div>
-                      )}
+                      
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        {booking.status === "cancellation_requested" && (
+                          <>
+                            <button
+                              onClick={() => handleApproveCancel(booking.id)}
+                              disabled={loadingId === booking.id}
+                              className="flex items-center gap-1 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" /> Approve
+                            </button>
+                            <button
+                              onClick={() => handleRejectCancel(booking.id)}
+                              disabled={loadingId === booking.id}
+                              className="flex items-center gap-1 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 cursor-pointer"
+                            >
+                              <XCircle className="w-3.5 h-3.5" /> Reject
+                            </button>
+                          </>
+                        )}
+                        {booking.status === "cancelled" && (
+                          <div className="flex items-center gap-2 text-xs text-stone-500 bg-stone-50 px-3 py-1.5 rounded-lg">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-stone-400" />
+                            <span>Cancellation completed</span>
+                          </div>
+                        )}
+                        {booking.status === "rejected" && (
+                          <div className="flex items-center gap-2 text-xs text-stone-500 bg-stone-50 px-3 py-1.5 rounded-lg">
+                            <XCircle className="w-3.5 h-3.5 text-stone-400" />
+                            <span>Cancellation rejected</span>
+                          </div>
+                        )}
+                        {booking.status !== "cancelled" && booking.status !== "completed" && booking.status !== "cancellation_requested" && booking.status !== "rejected" && (
+                          <>
+                            {!booking.canCancel && (
+                              <span className="text-xs text-red-500 mr-2">Too late to cancel</span>
+                            )}
+                            <button
+                              onClick={() => setCancelId(booking.id)}
+                              disabled={!booking.canCancel}
+                              className={`flex items-center gap-1 transition-colors ${
+                                booking.canCancel ? "text-red-400 hover:text-red-600 cursor-pointer" : "text-stone-300 cursor-not-allowed"
+                              }`}
+                              style={{ fontSize: "0.78rem" }}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Cancel
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
