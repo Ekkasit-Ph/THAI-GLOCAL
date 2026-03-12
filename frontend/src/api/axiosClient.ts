@@ -3,7 +3,7 @@ import axios from 'axios';
 // Create a globally configured Axios instance
 export const apiClient = axios.create({
   // BaseURL is / to allow /api and /client to properly process
-  baseURL: '/',
+  baseURL: 'https://thai-glocal-webclient.onrender.com',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
