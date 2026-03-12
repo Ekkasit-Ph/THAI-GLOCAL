@@ -57,7 +57,7 @@ public class UserSecurityConfig {
             "http://localhost:8080",  // Webclient
             "http://localhost:8081",  // Server (self)
             "http://localhost:8100",
-            "https://thai-glocal.onrender.com"   // Ionic/Capacitor dev
+            "https://thai-glocal-webclient.onrender.com"   // Ionic/Capacitor dev
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
