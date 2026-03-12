@@ -22,7 +22,9 @@ public class ActivityRegister {
     private Long activityRegisterId;
 
     private Integer numberOfRegister;
+    
     @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 50)
     private ActivityRegisterStatus status;
 
     // relationship

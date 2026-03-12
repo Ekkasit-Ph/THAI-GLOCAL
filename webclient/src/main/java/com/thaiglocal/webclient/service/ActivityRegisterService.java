@@ -142,6 +142,19 @@ public class ActivityRegisterService {
                 .bodyToMono(Void.class);
     }
 
+    public Mono<Void> reject(Long registerId, String cookieHeader) {
+        return activityRegisterWebClient
+                .patch()
+                .uri("/api/activity-registers/{registerId}/reject", registerId)
+                .headers(h -> addCookie(h, cookieHeader))
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError,
+                        cr -> Mono.error(new RuntimeException("Client error during reject activity-register")))
+                .onStatus(HttpStatusCode::is5xxServerError,
+                        cr -> Mono.error(new RuntimeException("Server error during reject activity-register")))
+                .bodyToMono(Void.class);
+    }
+
     private void addCookie(HttpHeaders headers, String cookieHeader) {
         if (cookieHeader != null && !cookieHeader.isBlank()) {
             headers.add("Cookie", cookieHeader);

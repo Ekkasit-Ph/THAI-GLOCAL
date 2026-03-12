@@ -1,5 +1,6 @@
 package com.thaiglocal.webclient.dto.response;
 
+
 import com.thaiglocal.webclient.dto.enums.ActivityRegisterStatus;
 
 public record ActivityRegisterResponse(
@@ -7,6 +8,7 @@ public record ActivityRegisterResponse(
         Long activityId,
         String activityName,
         String startDate,
+        UserResponse user,
         String username,
         Integer numberOfRegister,
         ActivityRegisterStatus status,

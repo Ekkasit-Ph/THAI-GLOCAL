@@ -43,6 +43,7 @@ public class ActivityRegisterService {
                 .activityName(activity != null ? activity.getActivityName() : null)
                 .startDate(activity != null && activity.getStartDate() != null
                         ? activity.getStartDate().toString() : null)
+                // .user(activityRegister.getUser())
                 .username(activityRegister.getUser().getUsername())
                 .numberOfRegister(count)
                 .status(activityRegister.getStatus())
@@ -162,5 +163,14 @@ public class ActivityRegisterService {
             throw new RuntimeException("Activity register not found with id: " + activityRegisterId);
         }
         activityRegisterRepository.deleteById(activityRegisterId);
+    }
+
+    @Transactional
+    public void rejectActivityRegister(Long activityRegisterId) {
+        ActivityRegister activityRegister = activityRegisterRepository.findById(activityRegisterId)
+                .orElseThrow(() -> new RuntimeException("Activity register not found with id: " + activityRegisterId));
+
+        activityRegister.setStatus(ActivityRegisterStatus.REJECTED);
+        activityRegisterRepository.save(activityRegister);
     }
 }

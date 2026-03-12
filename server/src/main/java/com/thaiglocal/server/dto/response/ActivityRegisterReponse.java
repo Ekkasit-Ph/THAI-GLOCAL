@@ -1,5 +1,6 @@
 package com.thaiglocal.server.dto.response;
 
+import com.thaiglocal.server.model.User;
 import com.thaiglocal.server.model.enums.ActivityRegisterStatus;
 
 import lombok.AllArgsConstructor;
@@ -18,6 +19,7 @@ public class ActivityRegisterReponse {
     private Long activityId;
     private String activityName;
     private String startDate;
+    private User user;
     private String username;
     private Integer numberOfRegister;
     private ActivityRegisterStatus status;

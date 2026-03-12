@@ -87,6 +87,13 @@ public class ActivityRegisterController {
         return ResponseEntity.ok().build();
     }
 
+    // Method: PATCH /api/activity-registers/{registerId}/reject
+    @PatchMapping("/{registerId}/reject")
+    public ResponseEntity<Void> rejectRegister(@PathVariable Long registerId) {
+        activityRegisterService.rejectActivityRegister(registerId);
+        return ResponseEntity.ok().build();
+    }
+
     // Method: DELETE /api/activity-registers/delete/{registerId}
     @DeleteMapping("/delete/{registerId}")
     public ResponseEntity<Void> deleteRegister(@PathVariable Long registerId) {

@@ -12,7 +12,7 @@ interface MyCenterState {
   myCenters: UserCenter[];
   myWorkshops: UserWorkshop[];
   mySessions: UserSession[];
-  myBookings: UserBooking[];
+  myBookings: any[];
 
   centers: UserCenter[];
   workshops: UserWorkshop[];
@@ -37,10 +37,11 @@ interface MyCenterState {
   addCenterStaff: (centerId: string, userId: string) => Promise<void>;
 
   updateBookingStatus: (id: string, status: string) => Promise<void>;
-  requestCancelBooking: (id: string, requestedBy: string) => Promise<void>;     
+  requestCancelBooking: (id: string) => Promise<void>;     
   approveCancelBooking: (id: string) => Promise<void>;
 
   updateCenterStatus: (centerId: string, status: string) => Promise<void>;
+  clearAllData: () => void;
 }
 
 const useMyCenterStore = create<MyCenterState>()(
@@ -112,14 +113,20 @@ const useMyCenterStore = create<MyCenterState>()(
           const activityResults = await Promise.allSettled(
             allWorkshops.map((w) => apiClient.get(`/client/activities/workshop/${w.id}`))
           );
-          const allSessions: any[] = activityResults.flatMap((r, i) => {
-            if (r.status !== "fulfilled") return [];
+          console.log("activity result", activityResults);
+          const allSessions: any[] = [];
+          const allBookings: any[] = [];
+
+          activityResults.forEach((r, i) => {
+            if (r.status !== "fulfilled") return;
             const list: any[] = Array.isArray(r.value) ? r.value : [];
-            return list.map((a: any) => {
+            list.forEach((a: any) => {
               const startDT: string = a.startDate ?? "";
               const endDT: string = a.endDate ?? "";
               const regDT: string = a.dateCanRegister ?? "";
-              return {
+              
+              // Map activity to session
+              allSessions.push({
                 id: String(a.activityId),
                 workshopId: allWorkshops[i].id,
                 name: a.activityName,
@@ -131,11 +138,34 @@ const useMyCenterStore = create<MyCenterState>()(
                 maxParticipants: a.registerCapacity ?? 0,
                 notes: "",
                 status: "upcoming" as UserSession["status"],
-              };
+              });
+              
+              // Map registerInfo to bookings
+              if (a.registerInfo && Array.isArray(a.registerInfo)) {
+                a.registerInfo.forEach((reg: any) => {
+                  allBookings.push({
+                    id: String(reg.activityRegisterId),
+                    sessionId: String(a.activityId),
+                    userId: reg.user?.userId ?? reg.userId,
+                    username: reg.username,
+                    firstName: reg.user?.firstName ?? "",
+                    lastName: reg.user?.lastName ?? "",
+                    email: reg.user?.email ?? "",
+                    telephone: reg.user?.telephone ?? "",
+                    address: reg.user?.address ?? "",
+                    numberOfParticipants: reg.numberOfRegister ?? 1,
+                    numberOfRegister: reg.numberOfRegister ?? 1,
+                    status: reg.status?.toLowerCase() ?? "pending",
+                    totalPrice: reg.totalPrice ?? 0,
+                    createdAt: reg.user?.createdAt ?? new Date(),
+                  });
+                });
+              }
+              console.log("all booking", allBookings);
             });
           });
 
-          set({ myCenters: mapped, myWorkshops: allWorkshops, mySessions: allSessions });
+          set({ myCenters: mapped, myWorkshops: allWorkshops, mySessions: allSessions, myBookings: allBookings });
         } catch (e) {
           console.error(e);
         }
@@ -253,20 +283,90 @@ const useMyCenterStore = create<MyCenterState>()(
       },
 
       updateBookingStatus: async (id, status) => {
-        console.warn("Feature Coming Soon");
-        alert("Booking handling Feature Coming Soon");
+        try {
+          const statusMap: Record<string, string> = {
+            "approved": "confirmed",
+            "confirmed": "confirmed",
+            "rejected": "rejected",
+            "cancelled": "cancelled",
+            "completed": "completed",
+          };
+          
+          const mappedStatus = statusMap[status] || status;
+          
+          // Send to webclient API
+          if (mappedStatus === "confirmed") {
+            await apiClient.patch(`/client/activity-registers/${id}/confirm`);
+          } else if (mappedStatus === "rejected") {
+            await apiClient.patch(`/client/activity-registers/${id}/reject`);
+          } else if (mappedStatus === "cancelled") {
+            await apiClient.patch(`/client/activity-registers/${id}/cancel`);
+          } else if (mappedStatus === "completed") {
+            await apiClient.patch(`/client/activity-registers/${id}/complete`);
+          }
+          
+          console.log("Booking status updated, refreshing data...");
+          
+          // 🔑 IMPORTANT: Refresh data after successful update
+          await new Promise(resolve => setTimeout(resolve, 500)); // Wait for backend
+          
+          set((state) => {
+            // Update local myBookings immediately
+            const updated = state.myBookings.map((b: any) =>
+              b.id === String(id) ? { ...b, status: mappedStatus } : b
+            );
+            return { myBookings: updated };
+          });
+          
+          // Then fetch fresh data from server
+          const ownerId = localStorage.getItem("userId");
+          if (ownerId) {
+            const state = useMyCenterStore.getState();
+            await state.fetchMyCenterData(ownerId);
+          }
+        } catch (e) {
+          console.error("Error updating booking status:", e);
+          throw e;
+        }
       },
-      requestCancelBooking: async (id, requestedBy) => {
-        console.warn("Feature Coming Soon");
-        alert("Booking handling Feature Coming Soon");
+      requestCancelBooking: async (id) => {
+        try {
+          await apiClient.patch(`/client/activity-registers/${id}/cancel`);
+          const ownerId = localStorage.getItem("userId");
+          if (ownerId) {
+            const state = useMyCenterStore.getState();
+            await state.fetchMyCenterData(ownerId);
+          }
+        } catch (e) {
+          console.error("Error requesting cancellation:", e);
+          throw e;
+        }
       },
       approveCancelBooking: async (id) => {
-        console.warn("Feature Coming Soon");
-        alert("Booking handling Feature Coming Soon");
+        try {
+          await apiClient.patch(`/client/activity-registers/${id}/cancel`);
+          const ownerId = localStorage.getItem("userId");
+          if (ownerId) {
+            const state = useMyCenterStore.getState();
+            await state.fetchMyCenterData(ownerId);
+          }
+        } catch (e) {
+          console.error("Error approving cancellation:", e);
+          throw e;
+        }
       },
 
       updateCenterStatus: async (centerId: string, status: string) => {
         await apiClient.patch(`/client/centers/${centerId}/status?status=${status}`);
+      },
+      clearAllData: () => {
+        set({
+          myCenters: [],
+          myWorkshops: [],
+          mySessions: [],
+          myBookings: [],
+          // เพิ่มทุก property ที่ต้องการล้าง
+        });
       }
     }),
     { name: "tg_mycenter" }

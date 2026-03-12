@@ -3,9 +3,11 @@ import { Navigate, useNavigate, useParams } from "react-router";
 import {
   ArrowLeft, Plus, Pencil, Trash2, BookOpen, Clock, Users,
   Calendar, Save, X, ChevronRight, CheckCircle2, XCircle, AlertCircle,
+  Mail, Phone, MapPin, User,
 } from "lucide-react";
 import useAuthStore from "../store/authStore";
 import useMyCenterStore, { UserSession } from "../store/myCenterStore";
+import { MyBookingsPage } from "./MyBookingsPage";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -266,6 +268,7 @@ export function WorkshopSessionsPage() {
   const [activeSession, setActiveSession] = useState<UserSession | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<any | null>(null); // ← Add this
 
   if (!user) return <Navigate to="/login" state={{ from: `/my-center/workshop/${workshopId}` }} replace />;
 
@@ -338,18 +341,137 @@ export function WorkshopSessionsPage() {
           </div>
         </div>
       )}
+      
+      {/* User Details Modal */}
+      {selectedBooking && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="font-bold text-lg text-stone-800">User Booking Informaion</h3>
+              <button 
+                onClick={() => setSelectedBooking(null)}
+                className="p-1 hover:bg-stone-100 rounded-lg text-stone-400 hover:text-stone-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* User Info */}
+              <div className="bg-amber-50 rounded-xl p-4 border border-amber-100">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-200 flex items-center justify-center">
+                    <User className="w-5 h-5 text-amber-700" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-stone-800">
+                      {selectedBooking.firstName || "N/A"} {selectedBooking.lastName || ""}
+                    </p>
+                    <p className="text-xs text-stone-500">@{selectedBooking.username}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Information */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-stone-700">Contact Information</h4>
+                {selectedBooking.email && (
+                  <div className="flex items-center gap-2 text-sm text-stone-600 bg-stone-50 p-2.5 rounded-lg">
+                    <Mail className="w-4 h-4 text-stone-400" />
+                    <span>{selectedBooking.email}</span>
+                  </div>
+                )}
+                {selectedBooking.telephone && (
+                  <div className="flex items-center gap-2 text-sm text-stone-600 bg-stone-50 p-2.5 rounded-lg">
+                    <Phone className="w-4 h-4 text-stone-400" />
+                    <span>{selectedBooking.telephone}</span>
+                  </div>
+                )}
+                {selectedBooking.address && (
+                  <div className="flex items-center gap-2 text-sm text-stone-600 bg-stone-50 p-2.5 rounded-lg">
+                    <MapPin className="w-4 h-4 text-stone-400" />
+                    <span>{selectedBooking.address}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Booking Information */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-stone-700">Booking Information</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="bg-stone-50 p-2.5 rounded-lg">
+                    <p className="text-stone-400 text-xs">Participants</p>
+                    <p className="font-semibold text-stone-800">{selectedBooking.numberOfParticipants} seat(s)</p>
+                  </div>
+                  <div className="bg-stone-50 p-2.5 rounded-lg">
+                    <p className="text-stone-400 text-xs">Total Price</p>
+                    <p className="font-semibold text-stone-800">฿{selectedBooking.totalPrice}</p>
+                  </div>
+                  <div className="bg-stone-50 p-2.5 rounded-lg col-span-2">
+                    <p className="text-stone-400 text-xs">Status</p>
+                    <p className={`font-semibold text-sm mt-1 ${
+                      selectedBooking.status === 'pending' ? 'text-amber-600' :
+                      selectedBooking.status === 'confirmed' ? 'text-green-600' :
+                      selectedBooking.status === 'rejected' ? 'text-red-600' :
+                      'text-stone-600'
+                    }`}>
+                      {selectedBooking.status?.toUpperCase()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Registered Date */}
+              {selectedBooking.createdAt && (
+                <div className="text-xs text-stone-500 pt-2 border-t border-stone-200">
+                  Registered: {new Date(selectedBooking.createdAt).toLocaleString()}
+                </div>
+              )}
+            </div>
+
+            <button 
+              onClick={() => setSelectedBooking(null)}
+              className="w-full mt-6 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-medium transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="min-h-screen bg-stone-50 pt-20 pb-16">
         <div className="py-8 px-4" style={{ background: "linear-gradient(135deg, #78350f 0%, #b45309 100%)" }}>
           <div className="max-w-3xl mx-auto">
             <button
-              onClick={() => setActiveSession(null)}
+              onClick={() => navigate(-1)}
               className="flex items-center gap-1.5 text-amber-200 hover:text-white text-sm mb-4 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Activities
+              Back
             </button>
-            <h1 className="text-2xl font-bold text-white leading-tight mb-2">Activity Registration Details</h1>
-            <p className="text-amber-100 text-sm">Review activity info and manage booking requests</p>
+
+            <div className="flex items-start gap-4">
+              {workshop.images && workshop.images[0] ? (
+                <img
+                  src={workshop.images[0]}
+                  alt={workshop.title}
+                  className="w-16 h-16 rounded-xl object-cover shrink-0 border-2 border-white/20"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                  <BookOpen className="w-7 h-7 text-white/70" />
+                </div>
+              )}
+              <div className="min-w-0">
+                <h1 className="text-xl font-bold text-white leading-tight">{workshop.title}</h1>
+                {workshop.titleTh && <p className="text-amber-200 text-sm mt-0.5">{workshop.titleTh}</p>}
+                <div className="flex flex-wrap gap-3 mt-2 text-xs text-amber-200">
+                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{workshop.duration}</span>
+                  <span className="flex items-center gap-1"><Users className="w-3 h-3" />Up to {workshop.maxParticipants}</span>
+                  <span className="px-2 py-0.5 bg-white/10 rounded-full">{workshop.category}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -387,13 +509,17 @@ export function WorkshopSessionsPage() {
                 <span className="text-2xl font-bold text-amber-600">{sessionBookings.filter((b: any) => b.status === 'pending').length}</span>
                 <span className="text-xs font-bold text-amber-800 uppercase mt-1">Pending</span>
               </div>
-              <div className="bg-blue-50 border border-blue-100 p-3 rounded-2xl flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold text-blue-600">{sessionBookings.filter((b: any) => b.status === 'approved').length}</span>
-                <span className="text-xs font-bold text-blue-800 uppercase mt-1">Approved</span>
-              </div>
               <div className="bg-green-50 border border-green-100 p-3 rounded-2xl flex flex-col items-center justify-center">
                 <span className="text-2xl font-bold text-green-600">{sessionBookings.filter((b: any) => b.status === 'confirmed').length}</span>
                 <span className="text-xs font-bold text-green-800 uppercase mt-1">Confirmed</span>
+              </div>
+              {/* <div className="bg-blue-50 border border-blue-100 p-3 rounded-2xl flex flex-col items-center justify-center">
+                <span className="text-2xl font-bold text-blue-600">{sessionBookings.filter((b: any) => b.status === 'complete').length}</span>
+                <span className="text-xs font-bold text-blue-800 uppercase mt-1">COMPLETE</span>
+              </div> */}
+              <div className="bg-red-50 border border-red-100 p-3 rounded-2xl flex flex-col items-center justify-center">
+                <span className="text-2xl font-bold text-red-600">{sessionBookings.filter((b: any) => b.status === 'rejected').length}</span>
+                <span className="text-xs font-bold text-red-800 uppercase mt-1">REJECTED</span>
               </div>
             </div>
 
@@ -406,15 +532,21 @@ export function WorkshopSessionsPage() {
             ) : (
               <div className="flex flex-col gap-4">
                 {sessionBookings.map((req: any) => (
-                  <div key={req.id} className={`bg-white rounded-2xl border-l-4 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-5 transition-shadow hover:shadow-md
-                    ${req.status === 'pending' ? 'border-l-amber-400 border-y-stone-100 border-r-stone-100' :
-                      req.status === 'approved' ? 'border-l-blue-400 border-y-stone-100 border-r-stone-100' :
-                      req.status === 'confirmed' ? 'border-l-green-400 border-y-stone-100 border-r-stone-100' :
-                      'border-l-red-400 border-y-stone-100 border-r-stone-100'}`}>
+                  <div 
+                    key={req.id} 
+                    onClick={() => setSelectedBooking(req)}
+                    className={`bg-white rounded-2xl border-l-4 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-5 transition-shadow hover:shadow-md cursor-pointer
+                      ${req.status === 'pending' ? 'border-l-amber-400 border-y-stone-100 border-r-stone-100' :
+                        req.status === 'approved' ? 'border-l-blue-400 border-y-stone-100 border-r-stone-100' :
+                        req.status === 'confirmed' ? 'border-l-green-400 border-y-stone-100 border-r-stone-100' :
+                        'border-l-red-400 border-y-stone-100 border-r-stone-100'}`}
+                  >
                     
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <span className="text-lg font-bold text-stone-800">{req.firstName} {req.lastName}</span>
+                        <span className="text-lg font-bold text-stone-800 hover:text-amber-600 transition-colors">
+                          {req.firstName} {req.lastName}
+                        </span>
                         <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider
                           ${req.status === 'pending' ? 'bg-amber-100 text-amber-800' :
                             req.status === 'approved' ? 'bg-blue-100 text-blue-800' :
@@ -427,50 +559,96 @@ export function WorkshopSessionsPage() {
                       
                       <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-stone-600">
                         <span className="flex items-center gap-1.5 bg-stone-50 px-2.5 py-1 rounded-md">
-                           <strong className="text-stone-800">Phone:</strong> {req.telephone}
+                           <strong className="text-stone-800">Username:</strong> {req.username}
                         </span>
                         <span className="flex items-center gap-1.5 bg-stone-50 px-2.5 py-1 rounded-md">
-                           <strong className="text-stone-800">Seats:</strong> {req.participants}
+                           <strong className="text-stone-800">Seats:</strong> {req.numberOfParticipants}
                         </span>
                         <span className="flex items-center gap-1.5 bg-stone-50 px-2.5 py-1 rounded-md">
-                           <strong className="text-stone-800">Booked:</strong> {new Date(req.createdAt).toLocaleDateString()}
+                           <strong className="text-stone-800">Total Price:</strong> {req.totalPrice}
                         </span>
                       </div>
+                      <p className="text-xs text-stone-400 mt-2 hover:text-stone-600">Click to view full details</p>
                     </div>
                     
-                    <div className="flex flex-wrap items-center gap-3 sm:justify-end border-t sm:border-t-0 pt-4 sm:pt-0 border-stone-100 shrink-0">
+                    <div 
+                      className="flex flex-wrap items-center gap-3 sm:justify-end border-t sm:border-t-0 pt-4 sm:pt-0 border-stone-100 shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       {req.status === "pending" && (
                         <>
-                          <button onClick={() => store.updateBookingStatus(req.id, "approved")} className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold shadow-sm transition-transform active:scale-95 flex items-center gap-2">
+                          <button 
+                            onClick={async () => {
+                              try {
+                                await store.updateBookingStatus(req.id, "confirmed");
+                              } catch (e) {
+                                setErrorMessage("Failed to approve booking. Please try again.");
+                              }
+                            }} 
+                            className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold shadow-sm transition-transform active:scale-95 flex items-center gap-2"
+                          >
                             <CheckCircle2 className="w-4 h-4" /> Approve
                           </button>
-                          <button onClick={() => store.updateBookingStatus(req.id, "rejected")} className="px-5 py-2.5 bg-white border-2 border-red-100 hover:bg-red-50 text-red-600 rounded-xl text-sm justify-center font-bold transition-transform active:scale-95 flex items-center gap-2">
+                          <button 
+                            onClick={async () => {
+                              try {
+                                await store.updateBookingStatus(req.id, "rejected");
+                              } catch (e) {
+                                setErrorMessage("Failed to reject booking. Please try again.");
+                              }
+                            }} 
+                            className="px-5 py-2.5 bg-white border-2 border-red-100 hover:bg-red-50 text-red-600 rounded-xl text-sm justify-center font-bold transition-transform active:scale-95 flex items-center gap-2"
+                          >
                             <XCircle className="w-4 h-4" /> Reject
                           </button>
                         </>
                       )}
                       {req.status === "approved" && (
-                        <button onClick={() => store.updateBookingStatus(req.id, "confirmed")} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-sm transition-transform active:scale-95 flex items-center gap-2" title="Confirm after user completes payment">
+                        <button 
+                          onClick={async () => {
+                            try {
+                              await store.updateBookingStatus(req.id, "confirmed");
+                            } catch (e) {
+                              setErrorMessage("Failed to confirm booking. Please try again.");
+                            }
+                          }} 
+                          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-sm transition-transform active:scale-95 flex items-center gap-2" 
+                          title="Confirm after user completes payment"
+                        >
                           <CheckCircle2 className="w-4 h-4" /> Mark Paid & Confirm
                         </button>
                       )}
                       {req.status === "cancellation_requested" && req.cancelRequestedBy === "participant" && (
-                        <button onClick={() => (store as any).approveCancellation(req.id)} className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold shadow-sm transition-transform active:scale-95 flex items-center gap-2">
+                        <button 
+                          onClick={async () => {
+                            try {
+                              await store.approveCancelBooking(req.id);
+                            } catch (e) {
+                              setErrorMessage("Failed to approve cancellation. Please try again.");
+                            }
+                          }} 
+                          className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold shadow-sm transition-transform active:scale-95 flex items-center gap-2"
+                        >
                           <CheckCircle2 className="w-4 h-4" /> Approve Cancellation
                         </button>
                       )}
                       {req.status === "cancellation_requested" && req.cancelRequestedBy === "center" && (
                          <span className="text-sm text-stone-500 italic px-4">Waiting for user...</span>
                       )}
-                      {(req.status === "confirmed" || req.status === "approved" || req.status === "pending") && (
-                        <button onClick={() => {
-                          if (req.status === "confirmed") {
-                            (store as any).requestCancellation(req.id, "center");
-                            alert("Cancellation requested. Waiting for user's approval.");
-                          } else {
-                            store.updateBookingStatus(req.id, "cancelled");
-                          }
-                        }} className="px-4 py-2 hover:bg-stone-100 text-stone-500 hover:text-stone-800 rounded-xl text-sm font-medium transition-colors">
+                      {(req.status === "confirmed") && (
+                        <button 
+                          onClick={async () => {
+                            try {
+                              if (req.status === "confirmed") {
+                                await store.requestCancelBooking(req.id);
+                                // alert("Cancellation requested. Waiting for user's approval.");
+                              }
+                            } catch (e) {
+                              setErrorMessage("Failed to cancel booking. Please try again.");
+                            }
+                          }} 
+                          className="px-4 py-2 hover:bg-stone-100 text-stone-500 hover:text-stone-800 rounded-xl text-sm font-medium transition-colors"
+                        >
                           Cancel Booking
                         </button>
                       )}

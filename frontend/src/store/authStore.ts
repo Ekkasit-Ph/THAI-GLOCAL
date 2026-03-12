@@ -1,7 +1,7 @@
-﻿
-import { create } from "zustand";
+﻿import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import apiClient from "../api/axiosClient";
+import useMyCenterStore from "./myCenterStore";  // เพิ่มบรรทัดนี้
 
 export interface User {
   id: string;
@@ -22,6 +22,7 @@ interface AuthState {
   updateProfile: (userData: any) => Promise<void>;
   logout: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
+  updateBookingStatus: (id: string, status: string) => Promise<void>;
 }
 
 const useAuthStore = create<AuthState>()(
@@ -82,14 +83,17 @@ const useAuthStore = create<AuthState>()(
         }
       },
       logout: async () => {
-        try {
-          await apiClient.post("/client/users/signout");
-        } catch (e) {
-          console.error("Signout request failed", e);
-        } finally {
-          set({ isAuthenticated: false, user: null });
-        }
+        // ล้างข้อมูล authStore
+        set({
+          isAuthenticated: false,
+          user: null,
+        });
+
+        // ล้างข้อมูล myCenterStore
+        const myCenterStore = useMyCenterStore.getState();
+        myCenterStore.clearAllData();  // เรียกใช้ function นี้
       },
+      
       forgotPassword: async (email: string) => {
          try {
              await apiClient.post("/client/users/forget-password", { email });
@@ -97,6 +101,21 @@ const useAuthStore = create<AuthState>()(
          } catch(e) {
              console.error("Forgot pass failed", e);
          }
+      },
+      updateBookingStatus: async (id: string, status: string) => {
+        try {
+          // ...existing status mapping...
+          
+          // Refresh data - ใช้ authStore หรือ session
+          const authState = useAuthStore.getState();
+          if (authState.user?.id) {
+            const state = useMyCenterStore.getState();
+            await state.fetchMyCenterData(String(authState.user.id));
+          }
+        } catch (e) {
+          console.error("Error updating booking status:", e);
+          throw e;
+        }
       }
     }),
     {

@@ -9,6 +9,7 @@ import com.thaiglocal.server.dto.request.ActivityRequest;
 import com.thaiglocal.server.dto.response.ActivityRegisterReponse;
 import com.thaiglocal.server.dto.response.ActivityResponse;
 import com.thaiglocal.server.model.Activity;
+import com.thaiglocal.server.model.User;
 import com.thaiglocal.server.model.Workshop;
 import com.thaiglocal.server.repository.ActivityRepository;
 import com.thaiglocal.server.repository.WorkshopRepository;
@@ -28,13 +29,18 @@ public class ActivityService {
 
     private ActivityResponse mapToActivityResponse(Activity activity) {
         List<ActivityRegisterReponse> registerInfo = activity.getActivityRegisters().stream()
-                .map(activityRegister -> ActivityRegisterReponse.builder()
+                .map((activityRegister) -> {
+                    User user = activityRegister.getUser();
+                    user.setActivityRegisters(null);
+                    return ActivityRegisterReponse.builder()
                         .activityRegisterId(activityRegister.getActivityRegisterId())
                         .username(activityRegister.getUser().getUsername())
                         .numberOfRegister(activityRegister.getNumberOfRegister())
                         .status(activityRegister.getStatus())
                         .totalPrice(activityRegister.getNumberOfRegister() * activity.getPrice())
-                        .build())
+                        .user(user)
+                        .build();
+                })
                 .toList();
                 
         return ActivityResponse.builder()

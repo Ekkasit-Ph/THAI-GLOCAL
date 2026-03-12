@@ -112,9 +112,9 @@ public class CenterService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
-        if (!user.getRole().equals(RoleName.CENTER_ADMIN)) {
-            throw new InvalidRoleException("Role must be "+ RoleName.CENTER_ADMIN + " to access this resource");
-        }
+        // if (!user.getRole().equals(RoleName.CENTER_ADMIN)) {
+        //     throw new InvalidRoleException("Role must be "+ RoleName.CENTER_ADMIN + " to access this resource");
+        // }
 
         List<Center> centers = user.getCenterBelongUsers().stream()
                 .map(centerBelongUser -> centerBelongUser.getCenter())

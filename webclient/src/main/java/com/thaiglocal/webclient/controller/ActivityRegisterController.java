@@ -90,6 +90,14 @@ public class ActivityRegisterController {
                 .thenReturn(ResponseEntity.ok().build());
     }
 
+    @PatchMapping("/{registerId}/reject")
+    public Mono<ResponseEntity<Void>> reject(
+            @PathVariable Long registerId,
+            @RequestHeader(value = "Cookie", required = false) String cookieHeader) {
+        return activityRegisterService.reject(registerId, cookieHeader)
+                .thenReturn(ResponseEntity.ok().build());
+    }
+
     @DeleteMapping("/delete/{registerId}")
     public Mono<ResponseEntity<Void>> delete(
             @PathVariable Long registerId,
