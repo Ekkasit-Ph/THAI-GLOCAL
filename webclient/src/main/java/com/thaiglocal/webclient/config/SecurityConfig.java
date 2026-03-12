@@ -2,42 +2,53 @@ package com.thaiglocal.webclient.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.reactive.CorsConfigurationSource;
-import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 
 @Configuration
-@EnableWebFluxSecurity // สำคัญมากสำหรับ WebFlux
+@EnableWebSecurity // ใช้ตัวนี้เพราะเรามี WebMVC อยู่ในโปรเจกต์
 public class SecurityConfig {
 
     @Bean
-    public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // 1. เปิดใช้งาน CORS ร่วมกับ Security
+            // 1. เปิดใช้งาน CORS และดึง Config จาก Bean ด้านล่าง
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            // 2. ปิด CSRF (ถ้าไม่ปิด จะยิง POST/PATCH ไม่ผ่านแน่นอน)
-            .csrf(ServerHttpSecurity.CsrfSpec::disable)
-            // 3. ปล่อยผ่านทุก Path ให้ไปคุยกับ Server หลักได้เลย
-            .authorizeExchange(exchanges -> exchanges
-                .anyExchange().permitAll()
+            // 2. ปิด CSRF เพราะเราใช้ API ข้ามโดเมน
+            .csrf(csrf -> csrf.disable())
+            // 3. ปิด Session เพราะเราจะส่ง Cookie/Token เอง (Stateless)
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            // 4. อนุญาตให้เข้าถึงทุก Path ได้โดยไม่ต้อง Login (ให้ด่าน Server หลักเป็นคนตรวจแทน)
+            .authorizeHttpRequests(auth -> auth
+                .anyRequest().permitAll()
             );
-        
+
         return http.build();
     }
 
-    // 4. ตั้งค่ารายละเอียด CORS (ห้ามมี / ปิดท้าย URL)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        
+        // อนุญาต Vercel (ห้ามมี / ปิดท้าย)
         configuration.setAllowedOrigins(Arrays.asList("https://thai-glocal-4fhx.vercel.app"));
+        
+        // อนุญาต Method ทุกอย่างที่ต้องใช้
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        
+        // อนุญาต Headers ทุกอย่าง
         configuration.setAllowedHeaders(Arrays.asList("*"));
+        
+        // สำคัญ: อนุญาตให้ส่ง Cookie ได้ (สัมพันธ์กับ WebClientConfig ของคุณ)
         configuration.setAllowCredentials(true);
+        
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
